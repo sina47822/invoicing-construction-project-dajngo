@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}پروژه Django{% endblock %}</title>
+    <!-- می‌تونی Bootstrap یا CSS اضافه کنی برای زیبایی -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">داشبورد</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <!-- لینک‌های صفحاتت -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'riz_metre_discipline_list' project_id=1 %}">ریز متره (لیست رشته)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'riz_metre' project_id=1 discipline_choice='some_choice' %}">ریز متره</a>  <!-- some_choice رو با مقدار واقعی جایگزین کن -->
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'riz_financial_discipline_list' project_id=1 %}">ریز مالی (لیست رشته)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'riz_financial' project_id=1 discipline_choice='some_choice' %}">ریز مالی</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'sooratjalase' project_id=1 %}">صورت جلسه</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'session_list' project_id=1 %}">لیست جلسات</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'detailed_session' session_id=1 %}">جزئیات جلسه</a>  <!-- session_id رو dynamic کن -->
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'project_financial_report' project_id=1 %}">گزارش مالی پروژه</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'project_financial_report_list' %}">لیست گزارش‌های مالی</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">خروج</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">ورود</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">ثبت‌نام</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

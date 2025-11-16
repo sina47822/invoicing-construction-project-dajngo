@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ title }}</h1>
+<p><strong>اقدام:</strong> {{ log.action }}</p>
+<p><strong>مدل:</strong> {{ log.model_name }}</p>
+<p><strong>ID شیء:</strong> {{ log.object_id }}</p>
+<p><strong>کاربر:</strong> {{ log.user|default:"نامشخص" }}</p>
+<p><strong>زمان:</strong> {{ log.timestamp|date:"Y-m-d H:i:s" }}</p>
+<p><strong>تغییرات:</strong></p>
+{% if log.changes %}
+<pre>{{ log.changes|json_encode|safe }}</pre>  <!-- نمایش JSON تغییرات -->
+{% else %}
+<p>بدون تغییرات خاص.</p>
+{% endif %}
+{% endblock %}

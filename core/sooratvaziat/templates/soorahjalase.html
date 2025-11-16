@@ -1,0 +1,432 @@
+<!-- \core\sooratvaziat\templates\soorahjalase.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>جزئیات صورت جلسات - {{ project.project_name }}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            line-height: 1.6;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .project-info {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .session-card {
+            background: white;
+            border-radius: 10px;
+            padding: 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .session-header {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 1.5rem;
+            margin: 0;
+        }
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .financial-table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            padding: 12px 15px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #dee2e6;
+        }
+        .financial-table td {
+            padding: 10px 15px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #dee2e6;
+        }
+        .item-group-header {
+            background-color: #e8f5e8 !important;
+            font-weight: bold;
+        }
+        .item-group-header td {
+            background-color: #2c3e50 !important;
+            color: white;
+            font-size: 1em;
+            padding: 12px 15px;
+            text-align: right;
+        }
+        .group-total {
+            background-color: #f8f9fa !important;
+            font-weight: bold;
+        }
+        .group-total td {
+            background-color: #f39c12 !important;
+            color: white;
+            font-size: 1em;
+            padding: 10px 15px;
+            text-align: right;
+        }
+        .btn-action {
+            border-radius: 25px;
+            padding: 8px 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .session-link {
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .session-link:hover {
+            color: #f1c40f;
+            text-decoration: underline;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stats-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-right: 0.5rem;
+        }
+        @media print {
+            .action-buttons, .btn, .export-buttons {
+                display: none !important;
+            }
+            body {
+                background-color: white !important;
+                font-size: 12px;
+            }
+            .header-section {
+                background: #2c3e50 !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Header Section -->
+        <div class="header-section text-center">
+            <div class="container">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    جزئیات صورت جلسات
+                </h1>
+                {% if project %}
+                <h2 class="h3 mb-2">{{ project.project_name }}</h2>
+                <p class="lead mb-0">کد پروژه: {{ project.project_code }} | سال اجرا: {{ project.execution_year }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <a href="{% url 'riz_metre_discipline_list' project.id %}" class="btn btn-success btn-action w-100">
+                        <i class="fas fa-ruler-combined me-2"></i>ریز متره
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'riz_financial_discipline_list' project.id %}" class="btn btn-info btn-action w-100">
+                        <i class="fas fa-calculator me-2"></i>ریز مالی
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'project_financial_report' project.id %}" class="btn btn-primary btn-action w-100">
+                        <i class="fas fa-chart-line me-2"></i>گزارش مالی
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{% url 'session_list' project.id %}" class="btn btn-warning btn-action w-100">
+                        <i class="fas fa-list me-2"></i>لیست جلسات
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Information -->
+        {% if project %}
+        <div class="project-info">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-3">
+                        <i class="fas fa-building me-2"></i>اطلاعات قرارداد
+                    </h5>
+                    <p><strong>کارفرما:</strong> {{ project.employer|default:"-" }}</p>
+                    <p><strong>پیمانکار:</strong> {{ project.contractor|default:"-" }}</p>
+                    <p><strong>مدیر طرح/مشاور:</strong> {{ project.consultant|default:"-" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="mb-3">
+                        <i class="fas fa-file-contract me-2"></i>مشخصات پروژه
+                    </h5>
+                    <p><strong>شماره قرارداد:</strong> {{ project.contract_number|default:"-" }}</p>
+                    <p><strong>سال اجرا:</strong> {{ project.execution_year }}</p>
+                    <p><strong>محل پروژه:</strong> {{ project.city|default:"-" }} - {{ project.province|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary text-center">
+                    <div class="card-body">
+                        <h5><i class="fas fa-clipboard-list me-2"></i>تعداد صورت جلسات</h5>
+                        <div class="h3">{{ sessions|length }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success text-center">
+                    <div class="card-body">
+                        <h5><i class="fas fa-cubes me-2"></i>تعداد گروه‌ها</h5>
+                        <div class="h3">
+                            {% with total_groups=0 %}
+                                {% for session_data in sessions %}
+                                    {{ total_groups|add:session_data.groups|length }}
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning text-center">
+                    <div class="card-body">
+                        <h5><i class="fas fa-layer-group me-2"></i>کل آیتم‌ها</h5>
+                        <div class="h3">
+                            {% with total_items=0 %}
+                                {% for session_data in sessions %}
+                                    {% for group in session_data.groups %}
+                                        {{ total_items|add:group.items|length }}
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions List -->
+        {% if sessions %}
+            {% for session_data in sessions %}
+                {% with session=session_data.instance %}
+                <div class="session-card">
+                    <!-- Session Header -->
+                    <div class="session-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-2">
+                                <i class="fas fa-file-alt me-2"></i>
+                                <a href="{% url 'detailed_session' session_id=session.id %}" class="session-link">
+                                    صورت جلسه شماره: {{ session.session_number }}
+                                </a>
+                            </h3>
+                            <div class="d-flex flex-wrap">
+                                <span class="stats-badge">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    ایجاد: {{ session.created_at|date:"Y/m/d H:i" }}
+                                </span>
+                                <span class="stats-badge">
+                                    <i class="fas fa-edit me-1"></i>
+                                    ویرایش: {{ session.updated_at|date:"Y/m/d H:i" }}
+                                </span>
+                                {% if session.discipline_choice %}
+                                <span class="stats-badge">
+                                    <i class="fas fa-cube me-1"></i>
+                                    {{ session.get_discipline_choice_display }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{% url 'detailed_session' session_id=session.id %}" class="btn btn-light btn-action">
+                                <i class="fas fa-edit me-2"></i>ویرایش جلسه
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Session Items Table -->
+                    <div class="table-responsive">
+                        <table class="financial-table">
+                            <thead>
+                                <tr>
+                                    <th width="10%">شماره ردیف</th>
+                                    <th width="25%">توضیح ردیف</th>
+                                    <th width="8%">طول</th>
+                                    <th width="8%">عرض</th>
+                                    <th width="8%">ارتفاع</th>
+                                    <th width="8%">وزن</th>
+                                    <th width="8%">تعداد</th>
+                                    <th width="15%">مقدار کل آیتم</th>
+                                    <th width="10%">عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if session_data.groups %}
+                                    {% for group in session_data.groups %}
+                                        <!-- Group Header -->
+                                        <tr class="item-group-header">
+                                            <td colspan="9">
+                                                <i class="fas fa-folder me-2"></i>
+                                                {% with g=group.grouper %}
+                                                آیتم: {{ g.row_number }} - {{ g.description }} (واحد: {{ g.unit }})
+                                                {% endwith %}
+                                            </td>
+                                        </tr>
+
+                                        <!-- Group Items -->
+                                        {% for row in group.items %}
+                                            {% with item=row.instance %}
+                                            <tr>
+                                                <td class="fw-bold">{{ item.pricelist_item.row_number }}</td>
+                                                <td class="text-start">{{ item.row_description|default:item.pricelist_item.description }}</td>
+                                                <td>{{ item.length|default:"-" }}</td>
+                                                <td>{{ item.width|default:"-" }}</td>
+                                                <td>{{ item.height|default:"-" }}</td>
+                                                <td>{{ item.weight|default:"-" }}</td>
+                                                <td>{{ item.count }}</td>
+                                                <td class="fw-bold text-success">{{ row.item_amount|floatformat:2 }}</td>
+                                                <td>
+                                                    <a href="{% url 'detailed_session' session_id=session.id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endwith %}
+                                        {% endfor %}
+
+                                        <!-- Group Total -->
+                                        <tr class="group-total">
+                                            <td colspan="7" class="text-start">
+                                                <i class="fas fa-calculator me-2"></i>
+                                                جمع آیتم {{ group.grouper.row_number }}
+                                            </td>
+                                            <td class="fw-bold">{{ group.group_total|floatformat:2 }}</td>
+                                            <td>-</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="fas fa-exclamation-circle me-2"></i>
+                                            هیچ آیتمی برای این صورت جلسه یافت نشد.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">هیچ صورت جلسه‌ای یافت نشد</h4>
+                <p class="text-muted">هنوز هیچ صورت جلسه‌ای برای این پروژه ایجاد نشده است.</p>
+                <a href="{% url 'session_list' project.id %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus me-2"></i>ایجاد صورت جلسه جدید
+                </a>
+            </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="text-center text-muted mt-5 pt-3 border-top">
+            <p class="small">
+                <i class="fas fa-clock me-1"></i>
+                تاریخ تولید گزارش: {% now "Y/m/d H:i" %}
+                {% if project %}
+                |
+                <i class="fas fa-project-diagram me-1"></i>
+                پروژه: {{ project.project_name }}
+                {% endif %}
+                |
+                <i class="fas fa-user me-1"></i>
+                کاربر: 
+                {% if request.user.get_full_name %}
+                    {{ request.user.get_full_name }}
+                {% else %}
+                    {{ request.user.username }}
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add interactivity to session cards
+            const sessionCards = document.querySelectorAll('.session-card');
+            sessionCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+                });
+            });
+
+            // Add loading animation to action buttons
+            const actionButtons = document.querySelectorAll('.btn-action');
+            actionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...';
+                    this.disabled = true;
+                    
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    }, 2000);
+                });
+            });
+
+            // Print functionality
+            const printButtons = document.querySelectorAll('a[href="javascript:window.print()"]');
+            printButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    setTimeout(() => {
+                        alert('برای بهترین نتیجه چاپ، از گزینه "زمینه‌های گرافیکی" در تنظیمات چاپ اطمینان حاصل کنید.');
+                    }, 100);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
