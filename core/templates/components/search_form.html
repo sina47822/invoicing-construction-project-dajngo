@@ -1,0 +1,59 @@
+{% load static %}
+<div class="search-form-container">
+    <form method="GET" action="{% url 'sooratvaziat:search' %}" role="search" class="search-form">
+        <div class="input-group position-relative">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="search" 
+                   class="form-control border-start-0 ps-0 search-input" 
+                   id="searchInput" 
+                   name="q" 
+                   value="{{ query|default:'' }}"
+                   placeholder="جستجوی پروژه، گزارش، ریز متره، صورت وضعیت..."
+                   autocomplete="off"
+                   aria-label="جستجو">
+            
+            <!-- Suggestions Container -->
+            <div class="search-suggestions dropdown-menu w-100 mt-0" 
+                 style="border-radius: 0 0 8px 8px; display: none;">
+                <!-- Dynamic content -->
+            </div>
+            
+            {% if query %}
+                <button type="button" class="btn btn-outline-secondary border-start-0 clear-search-btn" 
+                        id="clearSearch" title="پاک کردن">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+            {% endif %}
+            
+            <button class="btn btn-primary search-submit" type="submit">
+                <i class="bi bi-arrow-left"></i>
+                <span class="d-none d-sm-inline">جستجو</span>
+            </button>
+        </div>
+        
+        {% csrf_token %}
+        
+        <!-- Search Categories (اختیاری) -->
+        {% if not is_topbar %}
+            <div class="search-categories mt-3 pt-2 border-top">
+                <small class="text-muted">جستجو در:</small>
+                <div class="btn-group btn-group-sm mt-1" role="group">
+                    <a href="?q={{ query }}&type=project" 
+                       class="btn btn-outline-primary {% if request.GET.type == 'project' %}active{% endif %}">
+                        <i class="bi bi-building"></i> پروژه‌ها
+                    </a>
+                    <a href="?q={{ query }}&type=report" 
+                       class="btn btn-outline-primary {% if request.GET.type == 'report' %}active{% endif %}">
+                        <i class="bi bi-file-earmark-text"></i> گزارش‌ها
+                    </a>
+                    <a href="?q={{ query }}&type=metre" 
+                       class="btn btn-outline-primary {% if request.GET.type == 'metre' %}active{% endif %}">
+                        <i class="bi bi-rulers"></i> متره
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </form>
+</div>

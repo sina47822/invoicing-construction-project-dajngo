@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}پروفایل کاربر{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <style>
+        body {
+            background-color: #f0f4ff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: row-reverse; /* نوبار سمت راست */
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            height: 100vh;
+            position: fixed;
+            right: 0;
+            top: 0;
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sidebar a {
+            text-decoration: none;
+            color: #333;
+            padding: 0.5rem 0.75rem;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .sidebar a:hover {
+            background-color: #e6f0ff;
+            color: #0047b3;
+        }
+
+        .sidebar .active {
+            background-color: #4d94ff;
+            color: white;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            margin-right: 250px; /* فاصله از نوبار راست */
+            padding: 2rem;
+        }
+
+        .profile-header {
+            background-color: #4d94ff;
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-header img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid white;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <h4 class="text-center mb-3">منوی کاربری</h4>
+        <a href="{% url 'accounts:profile' %}" class="active">پروفایل من</a>
+        <a href="{% url 'accounts:dashboard' %}">داشبورد</a>
+        <a href="{% url 'sooratvaziat:project_financial_report_list'  %}">پروژه‌ها</a>
+        <a href="{% url 'accounts:settings' %}">تنظیمات حساب</a>
+        <a href="{% url 'accounts:logout' %}">خروج</a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,868 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}ایجاد پروژه جدید - {{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi {% if message.tags == 'success' %}bi-check-circle text-success{% elif message.tags == 'error' or message.tags == 'danger' %}bi-exclamation-triangle text-danger{% elif message.tags == 'warning' %}bi-exclamation-triangle text-warning{% else %}bi-info-circle text-info{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb" class="d-none d-md-block">
+                <ol class="breadcrumb breadcrumb-light">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'sooratvaziat:project_list' %}">
+                            <i class="bi bi-buildings me-1"></i>پروژه‌ها
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        ایجاد پروژه جدید
+                    </li>
+                </ol>
+            </nav>
+            <h2 class="mb-1">
+                <i class="bi bi-plus-circle text-success me-2"></i>
+                ایجاد پروژه جدید
+            </h2>
+            <p class="text-muted mb-0">
+                <small>اطلاعات پروژه را کامل کنید</small>
+            </p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{% url 'sooratvaziat:project_list' %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right me-2"></i>بازگشت به لیست
+            </a>
+            <button type="button" class="btn btn-outline-danger" onclick="resetForm()">
+                <i class="bi bi-arrow-clockwise me-2"></i>پاک کردن فرم
+            </button>
+        </div>
+    </div>
+
+    <!-- فرم ایجاد پروژه -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-secondary border-0">
+                    <h5 class="card-title mb-0 text-light">
+                        <i class="bi bi-card-checklist text-white me-2"></i>
+                        اطلاعات پروژه
+                    </h5>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST" id="projectCreateForm" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- نمایش خطاهای کلی -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                {{ form.non_field_errors }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row g-4">
+                            <!-- کاربر (مخفی) -->
+                            <div style="display:none;">{{ form.user }}</div>
+                            
+                            
+                            <!-- ردیف اول: نام و کد پروژه -->
+                            <div class="col-md-8">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control {% if form.project_name.errors %}is-invalid{% endif %}"
+                                           id="{{ form.project_name.id_for_label }}"
+                                           name="{{ form.project_name.name }}"
+                                           placeholder="نام پروژه"
+                                           value="{{ form.project_name.value|default:'' }}"
+                                           maxlength="255"
+                                           required>
+                                    <label for="{{ form.project_name.id_for_label }}">
+                                        {{ form.project_name.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {% if form.project_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.project_name.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">نام کامل پروژه (مثال: پروژه احداث پل فلزی)</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control {% if form.project_code.errors %}is-invalid{% endif %}"
+                                           id="{{ form.project_code.id_for_label }}"
+                                           name="{{ form.project_code.name }}"
+                                           placeholder="کد پروژه"
+                                           value="{{ form.project_code.value|default:'' }}"
+                                           maxlength="50"
+                                           autocomplete="off"
+                                           required>
+                                    <label for="{{ form.project_code.id_for_label }}">
+                                        {{ form.project_code.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {% if form.project_code.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.project_code.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">مثال: P-1403-001</div>
+                            </div>
+                            
+                            <!-- ردیف دوم: سال اجرا و تاریخ قرارداد -->
+                            <div class="col-md-6">
+                                <label for="{{ form.execution_year.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.execution_year.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.execution_year }}
+                                {% if form.execution_year.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.execution_year.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">سال اجرا بر اساس صورت وضعیت</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.contract_date.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.contract_date.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.contract_date }}
+                                {% if form.contract_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.contract_date.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">فرمت: 1403/06/15</div>
+                            </div>
+                            
+                            <!-- ردیف سوم: کارفرما و پیمانکار -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control {% if form.employer.errors %}is-invalid{% endif %}"
+                                           id="{{ form.employer.id_for_label }}"
+                                           name="{{ form.employer.name }}"
+                                           placeholder="کارفرما"
+                                           value="{{ form.employer.value|default:'' }}"
+                                           maxlength="255"
+                                           required>
+                                    <label for="{{ form.employer.id_for_label }}">
+                                        {{ form.employer.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {% if form.employer.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.employer.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">نام کامل کارفرما (مثال: شهرداری تهران)</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control {% if form.contractor.errors %}is-invalid{% endif %}"
+                                           id="{{ form.contractor.id_for_label }}"
+                                           name="{{ form.contractor.name }}"
+                                           placeholder="پیمانکار"
+                                           value="{{ form.contractor.value|default:'' }}"
+                                           maxlength="255"
+                                           required>
+                                    <label for="{{ form.contractor.id_for_label }}">
+                                        {{ form.contractor.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {% if form.contractor.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.contractor.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">نام پیمانکار (مثال: شرکت عمران آتی)</div>
+                            </div>
+                            
+                            <!-- ردیف چهارم: مشاور و ناظر -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control {% if form.consultant.errors %}is-invalid{% endif %}"
+                                           id="{{ form.consultant.id_for_label }}"
+                                           name="{{ form.consultant.name }}"
+                                           placeholder="مشاور"
+                                           value="{{ form.consultant.value|default:'' }}"
+                                           maxlength="255">
+                                    <label for="{{ form.consultant.id_for_label }}">
+                                        {{ form.consultant.label }}
+                                    </label>
+                                    {% if form.consultant.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.consultant.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">نام مدیر طرح یا مشاور (اختیاری)</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control {% if form.supervising_engineer.errors %}is-invalid{% endif %}"
+                                           id="{{ form.supervising_engineer.id_for_label }}"
+                                           name="{{ form.supervising_engineer.name }}"
+                                           placeholder="ناظر"
+                                           value="{{ form.supervising_engineer.value|default:'' }}"
+                                           maxlength="255">
+                                    <label for="{{ form.supervising_engineer.id_for_label }}">
+                                        {{ form.supervising_engineer.label }}
+                                    </label>
+                                    {% if form.supervising_engineer.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.supervising_engineer.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">نام مهندس ناظر (اختیاری)</div>
+                            </div>
+                            
+                            <!-- ردیف پنجم: نوع پروژه و مبلغ -->
+                            <div class="col-md-6">
+                                <label for="{{ form.project_type.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.project_type.label }}
+                                </label>
+                                {{ form.project_type }}
+                                {% if form.project_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.project_type.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">نوع پروژه را انتخاب کنید</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.contract_amount.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.contract_amount.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.contract_amount }}
+                                {% if form.contract_amount.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.contract_amount.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">به ریال - مثال: 1,500,000,000</div>
+                            </div>
+                            
+                            <!-- ردیف ششم: کشور -->
+                            <div class="col-md-6">
+                                <label for="{{ form.country.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.country.label }}
+                                </label>
+                                <div class="form-floating">
+                                    {{ form.country }}
+                                    {% if form.country.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.country.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">کشور محل پروژه (پیش‌فرض: ایران)</div>
+                            </div>
+
+                            <!-- ردیف هفتم: استان -->
+                            <div class="col-md-6">
+                                <label for="{{ form.province.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.province.label }} <span class="text-danger">*</span>
+                                </label>
+                                <div class="form-floating">
+                                    {{ form.province }}
+                                    {% if form.province.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.province.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">استان محل اجرای پروژه</div>
+                            </div>
+
+                            <!-- ردیف هشتم: شهر -->
+                            <div class="col-md-6">
+                                <label for="{{ form.city.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.city.label }} <span class="text-danger">*</span>
+                                </label>
+                                <div class="form-floating">
+                                    {{ form.city }}
+                                    {% if form.city.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.city.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">شهر محل اجرای پروژه</div>
+                            </div>
+                            
+                            <!-- ردیف نهم: شماره قرارداد، وضعیت -->
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.status.label }}
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.status.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">وضعیت فعلی پروژه</div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control {% if form.contract_number.errors %}is-invalid{% endif %}"
+                                           id="{{ form.contract_number.id_for_label }}"
+                                           name="{{ form.contract_number.name }}"
+                                           placeholder="شماره قرارداد"
+                                           value="{{ form.contract_number.value|default:'' }}"
+                                           maxlength="50"
+                                           required>
+                                    <label for="{{ form.contract_number.id_for_label }}">
+                                        {{ form.contract_number.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {% if form.contract_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.contract_number.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">مثال: 1403/001</div>
+                            </div>
+                            <!-- ردیف دهم: فایل قرارداد -->
+                            <div class="col-12">
+                                <label for="{{ form.contract_file.id_for_label }}" class="form-label text-black fw-semibold">
+                                    {{ form.contract_file.label }}
+                                </label>
+                                {{ form.contract_file }}
+                                {% if form.contract_file.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.contract_file.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    فایل PDF یا Word (حداکثر 5 مگابایت) - اختیاری
+                                </div>
+                            </div>
+                            
+                            <!-- ردیف نهم: توضیحات -->
+                            <div class="col-12">
+                                <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.description.label }}
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">توضیحات مختصر درباره پروژه (اختیاری)</div>
+                            </div>
+                        </div>
+                        
+                        <!-- دکمه‌های ارسال -->
+                        <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top">
+                            <div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms" required>
+                                    <label class="form-check-label" for="terms">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            با <a href="#" class="text-decoration-none">شرایط و قوانین</a> موافقم
+                                        </small>
+                                    </label>
+                                </div>
+                                <small class="text-muted">
+                                    فیلدهای با علامت * اجباری هستند
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                                    <i class="bi bi-arrow-right me-2"></i>انصراف
+                                </button>
+                                <button type="submit" class="btn btn-success px-4" id="submitBtn">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    ایجاد پروژه
+                                    <span class="spinner-border spinner-border-sm ms-2 d-none" id="submitSpinner"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- راهنما -->
+    <div class="row justify-content-center mt-5">
+        <div class="col-lg-10">
+            <div class="card border-0 bg-secondary">
+                <div class="card-body">
+                    <h6 class="card-title mb-3">
+                        <i class="bi bi-lightbulb me-2 text-warning"></i>
+                        راهنمای تکمیل فرم
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary bg-opacity-20 text-primary rounded p-2 me-3">
+                                    <i class="bi bi-hash fs-5"></i>
+                                </div>
+                                <div>
+                                    <strong>کد پروژه:</strong> از فرمت P-YYYY-NNN استفاده کنید 
+                                    (P برای پروژه، YYYY سال، NNN شماره ترتیبی)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-success bg-opacity-20 text-success rounded p-2 me-3">
+                                    <i class="bi bi-calendar-check fs-5"></i>
+                                </div>
+                                <div>
+                                    <strong>تاریخ قرارداد:</strong> تاریخ امضای قرارداد به شمسی 
+                                    (در صورت عدم وجود، خالی بگذارید)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-info bg-opacity-20 text-info rounded p-2 me-3">
+                                    <i class="bi bi-currency-rial fs-5"></i>
+                                </div>
+                                <div>
+                                    <strong>مبلغ قرارداد:</strong> مبلغ کل به ریال بدون جداکننده 
+                                    (مثال: 1500000000)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-warning bg-opacity-20 text-warning rounded p-2 me-3">
+                                    <i class="bi bi-person-lines-fill fs-5"></i>
+                                </div>
+                                <div>
+                                    <strong>کارفرما:</strong> از لیست انتخاب کنید یا بعداً ویرایش کنید
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="application/json" id="province-cities-data">
+    {{ province_cities_json|safe }}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"><link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+
+<style>
+.card {
+    border-radius: 12px !important;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1.5px solid #dee2e6;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+    transform: translateY(-1px);
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220,53,69,0.25) !important;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+
+.breadcrumb-light .breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+}
+
+.breadcrumb-light .breadcrumb-item a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.breadcrumb-light .breadcrumb-item a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+}
+
+/* انیمیشن برای فرم */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: slideInUp 0.6s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch !important;
+    }
+    
+    .d-flex.gap-2 {
+        justify-content: stretch !important;
+    }
+    
+    .btn {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .row.g-3 > .col-md-6,
+    .row.g-3 > .col-md-8,
+    .row.g-3 > .col-md-4 {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
+<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Starting form initialization...');
+    
+    // === Persian Datepicker Initialization ===
+    function initializeDatepicker() {
+        const dateInput = document.querySelector('input[name="contract_date"]');
+        if (!dateInput) {
+            console.error('❌ Date input not found');
+            return;
+        }
+        
+        console.log('📅 Initializing Persian Datepicker...');
+        
+        $(dateInput).persianDatepicker({
+            format: 'YYYY/MM/DD',
+            initialValue: true, // تاریخ امروز به صورت خودکار
+            autoClose: true,
+            position: "auto",
+            calendar: {
+                persian: {
+                    locale: 'fa',
+                    showHint: true,
+                }
+            },
+            toolbox: {
+                calendarSwitch: {
+                    enabled: false
+                }
+            },
+            navigator: {
+                enabled: true,
+                scroll: {
+                    enabled: true
+                }
+            },
+            timePicker: {
+                enabled: false
+            },
+            onSelect: function(pd) {
+                console.log('📅 Selected date:', pd.format('YYYY/MM/DD'));
+                dateInput.value = pd.format('YYYY/MM/DD');
+                dateInput.classList.remove('is-invalid');
+                dateInput.classList.add('is-valid');
+            },
+            onShow: function() {
+                console.log('📅 Datepicker shown');
+            },
+            onHide: function() {
+                console.log('📅 Datepicker hidden');
+            }
+        });
+        
+        // اضافه کردن آیکون تقویم
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'input-group datepicker-group';
+        
+        dateInput.parentNode.insertBefore(inputGroup, dateInput);
+        inputGroup.appendChild(dateInput);
+        
+        const calendarIcon = document.createElement('span');
+        calendarIcon.className = 'input-group-text bg-primary text-white cursor-pointer';
+        calendarIcon.innerHTML = '<i class="bi bi-calendar3"></i>';
+        calendarIcon.style.cursor = 'pointer';
+        
+        inputGroup.appendChild(calendarIcon);
+        
+        calendarIcon.addEventListener('click', function() {
+            $(dateInput).persianDatepicker('show');
+        });
+        
+        console.log('✅ Persian Datepicker initialized');
+    }
+
+    // === Province and City Handling ===
+    function initializeLocationFields() {
+        const provinceSelect = document.getElementById('id_province');
+        const citySelect = document.getElementById('id_city');
+        const countrySelect = document.getElementById('id_country');
+        
+        if (!provinceSelect || !citySelect || !countrySelect) {
+            console.error('❌ Location selects not found');
+            return;
+        }
+        
+        console.log('📍 Initializing location fields...');
+        
+        // داده‌های شهرها
+        const citiesDataElement = document.getElementById('province-cities-data');
+        let citiesByProvince = {};
+        
+        if (citiesDataElement) {
+            try {
+                citiesByProvince = JSON.parse(citiesDataElement.textContent);
+                console.log('✅ Cities data loaded, provinces:', Object.keys(citiesByProvince).length);
+            } catch (e) {
+                console.error('❌ Error parsing cities data:', e);
+                return;
+            }
+        }
+        
+        // تابع به‌روزرسانی شهرها
+        function updateCities() {
+            const selectedProvince = provinceSelect.value;
+            console.log('🔄 Updating cities for province:', selectedProvince);
+            
+            // پاک کردن گزینه‌های قبلی
+            citySelect.innerHTML = '<option value="">انتخاب شهر</option>';
+            citySelect.disabled = true;
+            
+            if (selectedProvince && citiesByProvince[selectedProvince]) {
+                const cities = citiesByProvince[selectedProvince];
+                console.log(`📍 Loading ${cities.length} cities for ${selectedProvince}`);
+                
+                cities.forEach(function(city) {
+                    const option = document.createElement('option');
+                    option.value = city[0];
+                    option.textContent = city[1];
+                    citySelect.appendChild(option);
+                });
+                
+                citySelect.disabled = false;
+                console.log('✅ City select enabled');
+            } else {
+                console.log('❌ No cities found for province:', selectedProvince);
+            }
+        }
+        
+        // رویداد تغییر استان
+        provinceSelect.addEventListener('change', function() {
+            console.log('🏛️ Province changed to:', this.value);
+            this.classList.remove('is-invalid');
+            updateCities();
+        });
+        
+        // رویداد تغییر کشور
+        countrySelect.addEventListener('change', function() {
+            console.log('🌍 Country changed to:', this.value);
+            if (this.value !== 'ایران') {
+                provinceSelect.value = '';
+                citySelect.innerHTML = '<option value="">انتخاب شهر</option>';
+                citySelect.disabled = true;
+            } else {
+                updateCities();
+            }
+        });
+        
+        // رویداد تغییر شهر
+        citySelect.addEventListener('change', function() {
+            console.log('🏙️ City changed to:', this.value);
+            this.classList.remove('is-invalid');
+        });        
+        // مقداردهی اولیه
+        if (countrySelect.value === 'ایران' && provinceSelect.value) {
+            updateCities();
+        }
+        
+        console.log('✅ Location fields initialized');
+    }
+
+    // === Form Validation ===
+    function initializeFormValidation() {
+        const form = document.getElementById('projectCreateForm');
+        if (!form) {
+            console.error('❌ Form not found');
+            return;
+        }
+        
+        console.log('✅ Form validation initialized');
+        
+        // رویداد سابمیت فرم
+        form.addEventListener('submit', function(e) {
+            console.log('📤 Form submission started...');
+            
+            let isValid = true;
+            
+            // اعتبارسنجی استان
+            const provinceSelect = document.getElementById('id_province');
+            if (!provinceSelect.value) {
+                provinceSelect.classList.add('is-invalid');
+                isValid = false;
+                console.log('❌ Province validation failed');
+            }
+            
+            // اعتبارسنجی شهر
+            const citySelect = document.getElementById('id_city');
+            if (!citySelect.disabled && !citySelect.value) {
+                citySelect.classList.add('is-invalid');
+                isValid = false;
+                console.log('❌ City validation failed');
+            }
+            
+            // اعتبارسنجی تاریخ
+            const dateInput = document.querySelector('input[name="contract_date"]');
+            if (!dateInput.value) {
+                dateInput.classList.add('is-invalid');
+                isValid = false;
+                console.log('❌ Date validation failed');
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                console.log('❌ Form validation failed');
+                
+                // اسکرول به اولین فیلد دارای خطا
+                const firstError = form.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+            } else {
+                console.log('✅ Form validation passed');
+                // نمایش اسپینر
+                const submitBtn = document.getElementById('submitBtn');
+                const submitSpinner = document.getElementById('submitSpinner');
+                if (submitBtn && submitSpinner) {
+                    submitBtn.disabled = true;
+                    submitSpinner.classList.remove('d-none');
+                    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>در حال ایجاد پروژه...';
+                }
+            }
+        });
+    }
+
+    // === Reset Form Function ===
+    window.resetForm = function() {
+        if (confirm('آیا مطمئن هستید که می‌خواهید تمام اطلاعات فرم را پاک کنید؟')) {
+            const form = document.getElementById('projectCreateForm');
+            if (form) {
+                form.reset();
+                
+                // بازنشانی تاریخ به امروز
+                const dateInput = document.querySelector('input[name="contract_date"]');
+                if (dateInput) {
+                    const today = new Date();
+                    const persianDate = new persianDate(today);
+                    dateInput.value = persianDate.format('YYYY/MM/DD');
+                }
+                
+                // بازنشانی موقعیت
+                const provinceSelect = document.getElementById('id_province');
+                const citySelect = document.getElementById('id_city');
+                const countrySelect = document.getElementById('id_country');
+                
+                if (countrySelect) countrySelect.value = 'ایران';
+                if (provinceSelect) provinceSelect.value = '';
+                if (citySelect) {
+                    citySelect.innerHTML = '<option value="">انتخاب شهر</option>';
+                    citySelect.disabled = true;
+                }
+                
+                // پاک کردن خطاها
+                document.querySelectorAll('.is-invalid').forEach(el => {
+                    el.classList.remove('is-invalid');
+                });
+                
+                console.log('✅ Form reset completed');
+            }
+        }
+    };
+
+    // === Initialize Everything ===
+    console.log('🎯 Starting all initializations...');
+    initializeDatepicker();
+    initializeLocationFields();
+    initializeFormValidation();
+    console.log('🎉 All initializations completed!');
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,412 @@
+/* Dashboard Specific Styles */
+
+/* Dashboard Header */
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.05"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.dashboard-header p {
+    font-size: 1.1rem;
+    margin: 0.5rem 0 0 0;
+    opacity: 0.9;
+}
+
+/* Stats Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+}
+
+.stat-card.primary::before {
+    background: linear-gradient(90deg, var(--primary-color), #0dcaf0);
+}
+
+.stat-card.success::before {
+    background: linear-gradient(90deg, var(--success-color), #20c997);
+}
+
+.stat-card.warning::before {
+    background: linear-gradient(90deg, var(--warning-color), #fd7e14);
+}
+
+.stat-card.danger::before {
+    background: linear-gradient(90deg, var(--danger-color), #dc3545);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.stat-icon.primary {
+    background: linear-gradient(135deg, var(--primary-color), #0dcaf0);
+    color: white;
+}
+
+.stat-icon.success {
+    background: linear-gradient(135deg, var(--success-color), #20c997);
+    color: white;
+}
+
+.stat-icon.warning {
+    background: linear-gradient(135deg, var(--warning-color), #fd7e14);
+    color: white;
+}
+
+.stat-icon.danger {
+    background: linear-gradient(135deg, var(--danger-color), #dc3545);
+    color: white;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin: 0;
+    line-height: 1;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0.5rem 0 0 0;
+}
+
+/* Recent Activity */
+.recent-activity {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+.activity-header {
+    background: linear-gradient(135deg, #ffffff, #e9ecef);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.activity-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.activity-item:hover {
+    background-color: #ffffff;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 1rem;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0 0 0.25rem 0;
+    font-size: 0.95rem;
+}
+
+.activity-description {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.activity-time {
+    color: #adb5bd;
+    font-size: 0.75rem;
+    margin: 0.25rem 0 0 0;
+}
+
+/* Quick Actions */
+.quick-actions {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.action-item {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    border: 2px solid transparent;
+}
+
+.action-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-item.primary {
+    border-color: var(--primary-color);
+    background: rgba(13, 110, 253, 0.05);
+}
+
+.action-item.primary:hover {
+    background: rgba(13, 110, 253, 0.1);
+    border-color: var(--primary-color);
+}
+
+.action-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.action-item.primary .action-icon {
+    color: var(--primary-color);
+}
+
+.action-label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+/* Project Overview */
+.project-overview {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.project-status {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f1f3f4;
+}
+
+.status-item {
+    text-align: center;
+}
+
+.status-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark-color);
+    display: block;
+}
+
+.status-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Charts Container */
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    height: 400px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.chart-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.chart-period {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .dashboard-header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .charts-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .chart-card {
+        height: 350px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 1.5rem 0;
+        text-align: center;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .project-status {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .chart-card {
+        height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-card {
+        height: 280px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .dashboard-header {
+        color: #ffffff;
+    }
+    
+    .stat-card,
+    .recent-activity,
+    .quick-actions,
+    .project-overview,
+    .chart-card {
+        background-color: #8d9399;
+        color: #ffffff;
+    }
+    
+    .stat-number {
+        color: #ffffff;
+    }
+    
+    .activity-item:hover {
+        background-color: #495057;
+    }
+}

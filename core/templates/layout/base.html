@@ -1,0 +1,1067 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="{% block meta_description %}سیستم مدیریت پروژه‌های عمرانی{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}پروژه, عمران, متره, مالی{% endblock %}">
+    
+    <title>{% block title %}پروژه Django{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
+    
+    <!-- Bootstrap 5.3.3 RTL (آخرین نسخه) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" integrity="sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb" crossorigin="anonymous">
+
+    <!-- Bootstrap Icons 1.11.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Font Awesome 6.4.0 (برای آیکون‌های اضافی) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts: Vazir for Persian -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="{% static 'css/custom.css' %}" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600&display=swap" as="style">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Custom Base Styles -->
+    <style>
+        /* Base Styles for RTL Layout */
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --info-color: #0dcaf0;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-color: #ffffff;
+            --dark-color: #ffffff;
+            
+            --header-height: 64px;
+            --sidebar-width: 280px;
+            --sidebar-mini-width: 60px;
+            
+            /* Persian Typography */
+            --font-family-base: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-size-base: 1rem;
+            --line-height-base: 1.5;
+            
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: var(--font-family-base);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+            color: var(--dark-color);
+            background-color: var(--light-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            direction: rtl;
+            unicode-bidi: embed;
+        }
+        
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            line-height: 1.2;
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+        }
+        
+        h1 { font-size: 2.5rem; }
+        h2 { font-size: 2rem; }
+        h3 { font-size: 1.75rem; }
+        h4 { font-size: 1.5rem; }
+        h5 { font-size: 1.25rem; }
+        h6 { font-size: 1rem; }
+        
+        .small { font-size: 0.875rem; }
+        .smaller { font-size: 0.75rem; }
+        
+        /* Layout Improvements */
+        .main-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: var(--spacing-lg) 0;
+            background-color: #ffffff;
+        }
+        
+        /* Sidebar Improvements */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+            border-left: 1px solid #e9ecef;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1035;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sidebar.collapsed {
+            width: var(--sidebar-mini-width);
+        }
+        
+        .sidebar .nav-link {
+            color: var(--dark-color);
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 0;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: var(--primary-color);
+            transform: translateX(-5px);
+            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+        }
+        
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #ffffff);
+            color: white;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+        
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-left: 0.75rem;
+            font-size: 1.1rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .sidebar.collapsed .nav-link span {
+            opacity: 0;
+            visibility: hidden;
+            width: 0;
+            overflow: hidden;
+        }
+        
+        .sidebar.collapsed .nav-link i {
+            margin-left: 0;
+        }
+        
+        /* Main Content Area */
+        .main-content-area {
+            margin-right: var(--sidebar-width);
+            transition: margin-right 0.3s ease;
+            min-height: 100vh;
+        }
+        
+        .sidebar.collapsed ~ .main-content-area {
+            margin-right: var(--sidebar-mini-width);
+        }
+        
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content-area {
+                margin-right: 0 !important;
+            }
+            
+            .navbar-toggler-sidebar {
+                display: block !important;
+            }
+        }
+        
+        /* Topbar Improvements */
+        .topbar {
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+            border-bottom: 1px solid #e9ecef;
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1040;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .topbar .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-color) !important;
+            text-decoration: none;
+        }
+        
+        .topbar .nav-link {
+            color: var(--dark-color);
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .topbar .nav-link:hover {
+            background-color: rgba(13, 110, 253, 0.1);
+            color: var(--primary-color);
+        }
+        
+        /* Footer */
+        .footer {
+            background-color: #ffffff;
+            border-top: 1px solid #e9ecef;
+            padding: 1.5rem 0;
+            margin-top: auto;
+            color: #6c757d;
+        }
+        
+        .footer a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+        
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .spinner-border-sm-custom {
+            width: 2rem;
+            height: 2rem;
+        }
+        
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1090;
+            max-width: 350px;
+        }
+        
+        @media (max-width: 575.98px) {
+            .toast-container {
+                top: 0.5rem;
+                right: 0.5rem;
+                left: 0.5rem;
+                width: calc(100% - 1rem);
+                max-width: none;
+            }
+        }
+        
+        /* Print Styles */
+        @media print {
+            .no-print,
+            .sidebar,
+            .topbar,
+            .footer,
+            .toast-container {
+                display: none !important;
+            }
+            
+            .main-content-area {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            body {
+                background: white !important;
+                font-size: 12pt !important;
+            }
+            
+            .container-fluid {
+                padding: 0 !important;
+                max-width: none !important;
+            }
+            
+            h1 { font-size: 18pt !important; }
+            h2 { font-size: 16pt !important; }
+            h3 { font-size: 14pt !important; }
+            h4, h5, h6 { font-size: 12pt !important; }
+        }
+        
+        /* Accessibility */
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Focus Styles */
+        *:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Selection Styles */
+        ::selection {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* RTL Fixes */
+        .dropdown-menu {
+            text-align: right;
+        }
+        
+        .dropdown-toggle::after {
+            margin-left: 0;
+            margin-right: 0.5rem;
+            border-right: 0.3em solid;
+            border-left: 0;
+            transform: rotate(90deg);
+        }
+        
+        .form-floating > label {
+            right: 0;
+            left: auto;
+        }
+        
+        .form-check {
+            padding-right: 1.5em;
+            padding-left: 0;
+        }
+        
+        .form-check-input {
+            float: right;
+            margin-left: 0;
+            margin-right: -1.5em;
+        }
+        
+        .list-group-item {
+            padding-right: 1rem;
+            padding-left: 1rem;
+        }
+        
+        /* Loading Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: var(--spacing-md) var(--spacing-sm);
+            }
+            
+            h1 { font-size: 2rem; }
+            h2 { font-size: 1.75rem; }
+            h3 { font-size: 1.5rem; }
+            h4 { font-size: 1.25rem; }
+        }
+        
+        /* Dark mode support (optional) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --light-color: #ffffff;
+                --dark-color: #ffffff;
+            }
+            
+            body {
+                background-color: var(--light-color);
+                color: var(--dark-color);
+            }
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="text-center">
+            <div class="spinner-border text-primary spinner-border-sm-custom mb-3" role="status">
+                <span class="visually-hidden">در حال بارگذاری...</span>
+            </div>
+            <div class="text-muted">در حال بارگذاری</div>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <!-- Topbar -->
+        {% include 'components/topbar.html' %}
+
+        <!-- Main Content -->
+        <div class="d-flex flex-grow-1">
+
+            <!-- Main Content Area -->
+            <div class="main-content-area flex-grow-1">
+                <main class="main-content">
+                    <div class="container-fluid">
+                        {% block content %}
+                            <div class="row justify-content-center">
+                                <div class="col-12">
+                                    <div class="alert alert-info text-center">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>خوش آمدید!</strong> لطفاً از منوی کناری برای مشاهده گزارش‌ها استفاده کنید.
+                                    </div>
+                                </div>
+                            </div>
+                        {% endblock %}
+                    </div>
+                </main>
+            </div>
+
+            <!-- Sidebar -->
+            {% include 'components/sidebar.html' %}
+        </div>
+
+        <!-- Footer -->
+        {% include 'components/footer.html' %}
+    </div>
+
+    <!-- Bootstrap 5.3.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Page-specific JavaScript -->
+    {% block extra_js %}{% endblock %}
+
+    <!-- Global Scripts -->
+    <script>
+        (function() {
+            'use strict';
+            
+            // DOM Content Loaded
+            document.addEventListener('DOMContentLoaded', function() {
+                // Hide loading overlay
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    setTimeout(() => {
+                        loadingOverlay.classList.add('hidden');
+                        setTimeout(() => loadingOverlay.remove(), 300);
+                    }, 500);
+                }
+                
+                // Initialize global utilities
+                if (typeof window.initGlobalUtils === 'function') {
+                    window.initGlobalUtils();
+                }
+                
+                // Initialize tooltips and popovers
+                initializeTooltipsAndPopovers();
+                
+                // Setup keyboard shortcuts
+                setupKeyboardShortcuts();
+                
+                // Track page load
+                trackPageLoad();
+            });
+            
+            // Initialize tooltips and popovers
+            function initializeTooltipsAndPopovers() {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl, {
+                        trigger: 'hover focus',
+                        placement: 'top',
+                        delay: { show: 200, hide: 100 },
+                        template: `
+                            <div class="tooltip" role="tooltip">
+                                <div class="tooltip-arrow"></div>
+                                <div class="tooltip-inner bg-dark text-white px-2 py-1 rounded shadow-sm"></div>
+                            </div>
+                        `
+                    });
+                });
+                
+                const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+                const popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                    return new bootstrap.Popover(popoverTriggerEl, {
+                        trigger: 'hover focus',
+                        placement: 'top',
+                        html: true,
+                        delay: { show: 300, hide: 100 }
+                    });
+                });
+                
+                // Cleanup on page unload
+                window.addEventListener('beforeunload', function() {
+                    tooltipList.forEach(tooltip => tooltip.dispose());
+                    popoverList.forEach(popover => popover.dispose());
+                });
+            }
+            
+            // Global keyboard shortcuts
+            function setupKeyboardShortcuts() {
+                const shortcuts = {
+                    'Control+/': () => {
+                        // Focus search if available
+                        const searchInput = document.querySelector('input[type="search"], input[placeholder*="جستجو"]');
+                        if (searchInput) {
+                            searchInput.focus();
+                            searchInput.select();
+                        }
+                    },
+                    'Control+k': () => {
+                        // Open keyboard shortcuts modal if exists
+                        const modal = document.getElementById('keyboardShortcutsModal');
+                        if (modal) {
+                            new bootstrap.Modal(modal).show();
+                        }
+                    },
+                    'Control+p': () => {
+                        // Print current page
+                        window.print();
+                    },
+                    'Escape': () => {
+                        // Close all modals and dropdowns
+                        const modals = document.querySelectorAll('.modal.show');
+                        modals.forEach(modal => {
+                            const modalInstance = bootstrap.Modal.getInstance(modal);
+                            if (modalInstance) modalInstance.hide();
+                        });
+                        
+                        const dropdowns = document.querySelectorAll('.dropdown-menu.show');
+                        dropdowns.forEach(dropdown => dropdown.classList.remove('show'));
+                    },
+                    'Control+s': (e) => {
+                        // Prevent default save in browsers
+                        e.preventDefault();
+                        if (typeof showToast === 'function') {
+                            showToast('صفحه ذخیره شد', 'info');
+                        }
+                        return false;
+                    }
+                };
+                
+                document.addEventListener('keydown', function(e) {
+                    // Check for shortcuts
+                    const keyCombo = [];
+                    if (e.ctrlKey) keyCombo.push('Control');
+                    if (e.altKey) keyCombo.push('Alt');
+                    if (e.shiftKey) keyCombo.push('Shift');
+                    keyCombo.push(e.key);
+                    
+                    const combo = keyCombo.join('+');
+                    if (shortcuts[combo]) {
+                        e.preventDefault();
+                        shortcuts[combo](e);
+                    }
+                });
+            }
+            
+            // Simple toast notification system
+            window.showToast = function(message, type = 'info', title = '') {
+                // Remove existing toasts
+                const existingToasts = document.querySelectorAll('.custom-toast');
+                existingToasts.forEach(toast => toast.remove());
+                
+                // Create toast element
+                const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+                const toastId = 'toast-' + Date.now();
+                
+                const toastHTML = `
+                    <div class="toast custom-toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'primary'} border-0" 
+                         role="alert" aria-live="assertive" aria-atomic="true" id="${toastId}"
+                         data-bs-autohide="true" data-bs-delay="5000">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${title ? `<strong class="me-2">${title}:</strong>` : ''}
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="بستن"></button>
+                        </div>
+                    </div>
+                `;
+                
+                toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+                const toastElement = document.getElementById(toastId);
+                const toast = new bootstrap.Toast(toastElement);
+                toast.show();
+                
+                // Auto remove after animation
+                toastElement.addEventListener('hidden.bs.toast', function() {
+                    this.remove();
+                });
+            };
+            
+            function createToastContainer() {
+                const container = document.createElement('div');
+                container.className = 'toast-container position-fixed end-0 top-0 p-3';
+                document.body.appendChild(container);
+                return container;
+            }
+            
+            // Page load tracking
+            function trackPageLoad() {
+                const pageTitle = document.title;
+                const pageUrl = window.location.pathname;
+                const loadTime = performance.now();
+                
+                // Simple analytics (extend as needed)
+                if (console && console.log) {
+                    console.log(`Page loaded: ${pageTitle} (${loadTime.toFixed(0)}ms)`);
+                }
+                
+                // Send to analytics if available
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'page_view', {
+                        page_title: pageTitle,
+                        page_location: pageUrl,
+                        page_load_time: Math.round(loadTime)
+                    });
+                }
+            }
+            
+            // Global utilities
+            window.initGlobalUtils = function() {
+                
+                // Global event bus (simple pub/sub)
+                window.EventBus = {
+                    events: {},
+                    subscribe: function(event, callback) {
+                        if (!this.events[event]) {
+                            this.events[event] = [];
+                        }
+                        this.events[event].push(callback);
+                    },
+                    publish: function(event, data) {
+                        if (this.events[event]) {
+                            this.events[event].forEach(callback => callback(data));
+                        }
+                    }
+                };
+                
+                // Confirm action utility
+                window.confirmAction = function(message, options = {}) {
+                    return new Promise((resolve, reject) => {
+                        if (options.simple) {
+                            if (confirm(message)) {
+                                resolve(true);
+                            } else {
+                                reject(false);
+                            }
+                        } else {
+                            // Create modal if not exists
+                            let modal = document.getElementById('confirmModal');
+                            if (!modal) {
+                                modal = createConfirmModal();
+                            }
+                            
+                            const modalInstance = new bootstrap.Modal(modal);
+                            const messageEl = modal.querySelector('.confirm-message');
+                            const yesBtn = modal.querySelector('.btn-confirm-yes');
+                            const noBtn = modal.querySelector('.btn-confirm-no');
+                            
+                            messageEl.textContent = message;
+                            
+                            // Setup buttons
+                            const yesHandler = () => {
+                                modalInstance.hide();
+                                resolve(true);
+                                yesBtn.removeEventListener('click', yesHandler);
+                                noBtn.removeEventListener('click', noHandler);
+                            };
+                            
+                            const noHandler = () => {
+                                modalInstance.hide();
+                                reject(false);
+                                yesBtn.removeEventListener('click', yesHandler);
+                                noBtn.removeEventListener('click', noHandler);
+                            };
+                            
+                            yesBtn.addEventListener('click', yesHandler);
+                            noBtn.addEventListener('click', noHandler);
+                            
+                            // Show modal
+                            modalInstance.show();
+                            
+                            // Handle escape key
+                            modal.addEventListener('keydown', function(e) {
+                                if (e.key === 'Escape') {
+                                    noHandler();
+                                }
+                            });
+                        }
+                    });
+                };
+                
+                function createConfirmModal() {
+                    const modalHTML = `
+                        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            تأیید عملیات
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="confirm-message text-center py-3"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary btn-confirm-no">
+                                            <i class="bi bi-x-circle me-2"></i>خیر
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-confirm-yes">
+                                            <i class="bi bi-check-circle me-2"></i>بله
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+                    return document.getElementById('confirmModal');
+                }
+                
+                // Loading state management
+                window.setLoadingState = function(element, state) {
+                    if (!element) return;
+                    
+                    if (state === true) {
+                        element.classList.add('disabled');
+                        element.setAttribute('disabled', 'disabled');
+                        
+                        const originalHTML = element.innerHTML;
+                        element.dataset.originalHTML = originalHTML;
+                        
+                        const iconHTML = element.querySelector('i') ? 
+                            element.querySelector('i').outerHTML : 
+                            '<i class="bi"></i>';
+                        
+                        element.innerHTML = `
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            ${iconHTML}
+                            <span class="loading-text">در حال پردازش...</span>
+                        `;
+                        
+                        element.dataset.loading = 'true';
+                    } else {
+                        element.classList.remove('disabled');
+                        element.removeAttribute('disabled');
+                        
+                        if (element.dataset.originalHTML) {
+                            element.innerHTML = element.dataset.originalHTML;
+                            delete element.dataset.originalHTML;
+                        }
+                        
+                        delete element.dataset.loading;
+                        element.querySelector('.loading-text')?.remove();
+                        element.querySelector('.spinner-border')?.remove();
+                    }
+                };
+                
+                // Form validation helper
+                window.validateForm = function(form, rules = {}) {
+                    const errors = [];
+                    
+                    // Reset previous errors
+                    form.querySelectorAll('.is-invalid').forEach(el => {
+                        el.classList.remove('is-invalid');
+                        el.classList.add('is-valid');
+                    });
+                    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+                    
+                    // Check required fields
+                    const requiredFields = form.querySelectorAll('[required]');
+                    requiredFields.forEach(field => {
+                        if (!field.value.trim()) {
+                            field.classList.remove('is-valid');
+                            field.classList.add('is-invalid');
+                            errors.push(field.name || field.id || 'فیلد مورد نیاز');
+                        } else {
+                            field.classList.remove('is-invalid');
+                            field.classList.add('is-valid');
+                        }
+                    });
+                    
+                    // Custom rules
+                    Object.keys(rules).forEach(fieldName => {
+                        const field = form.querySelector(`[name="${fieldName}"], [id="${fieldName}"]`);
+                        if (field) {
+                            const rule = rules[fieldName];
+                            const value = field.value;
+                            
+                            if (rule.required && !value.trim()) {
+                                showFieldError(field, 'این فیلد الزامی است');
+                                errors.push(fieldName);
+                            } else if (rule.pattern && !rule.pattern.test(value)) {
+                                showFieldError(field, rule.message || 'فرمت وارد شده صحیح نیست');
+                                errors.push(fieldName);
+                            } else if (rule.minLength && value.length < rule.minLength) {
+                                showFieldError(field, `حداقل ${rule.minLength} کاراکتر وارد کنید`);
+                                errors.push(fieldName);
+                            } else if (rule.custom && !rule.custom(value)) {
+                                showFieldError(field, rule.message || 'مقدار وارد شده صحیح نیست');
+                                errors.push(fieldName);
+                            }
+                        }
+                    });
+                    
+                    if (errors.length > 0) {
+                        const firstError = form.querySelector('.is-invalid');
+                        if (firstError) {
+                            firstError.focus();
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        
+                        showToast(`لطفاً ${errors.length} خطا را برطرف کنید`, 'danger');
+                        return false;
+                    }
+                    
+                    return true;
+                };
+                
+                function showFieldError(field, message) {
+                    field.classList.add('is-invalid');
+                    field.classList.remove('is-valid');
+                    
+                    let feedback = field.parentElement.querySelector('.invalid-feedback');
+                    if (!feedback) {
+                        feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback';
+                        field.parentElement.appendChild(feedback);
+                    }
+                    
+                    feedback.textContent = message;
+                }
+                
+                // AJAX helper
+                window.makeAjaxRequest = function(url, options = {}) {
+                    const defaults = {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': window.AppConfig.csrfToken
+                        },
+                        data: null,
+                        timeout: 10000
+                    };
+                    
+                    const config = { ...defaults, ...options };
+                    
+                    return new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        
+                        // Setup timeout
+                        const timeoutId = setTimeout(() => {
+                            xhr.abort();
+                            reject(new Error('Request timeout'));
+                        }, config.timeout);
+                        
+                        xhr.open(config.method, url, true);
+                        
+                        // Set headers
+                        Object.keys(config.headers).forEach(key => {
+                            xhr.setRequestHeader(key, config.headers[key]);
+                        });
+                        
+                        // Handle response
+                        xhr.onreadystatechange = function() {
+                            if (xhr.readyState === 4) {
+                                clearTimeout(timeoutId);
+                                
+                                if (xhr.status >= 200 && xhr.status < 300) {
+                                    try {
+                                        const responseData = xhr.responseText ? 
+                                            JSON.parse(xhr.responseText) : {};
+                                        resolve({
+                                            data: responseData,
+                                            status: xhr.status,
+                                            statusText: xhr.statusText,
+                                            headers: parseHeaders(xhr.getAllResponseHeaders())
+                                        });
+                                    } catch (e) {
+                                        resolve({
+                                            data: xhr.responseText,
+                                            status: xhr.status,
+                                            statusText: xhr.statusText,
+                                            headers: parseHeaders(xhr.getAllResponseHeaders())
+                                        });
+                                    }
+                                } else {
+                                    let errorData;
+                                    try {
+                                        errorData = JSON.parse(xhr.responseText);
+                                    } catch (e) {
+                                        errorData = { message: xhr.statusText };
+                                    }
+                                    
+                                    reject({
+                                        error: errorData,
+                                        status: xhr.status,
+                                        statusText: xhr.statusText
+                                    });
+                                }
+                            }
+                        };
+                        
+                        // Handle errors
+                        xhr.onerror = function() {
+                            clearTimeout(timeoutId);
+                            reject(new Error('Network error occurred'));
+                        };
+                        
+                        xhr.ontimeout = function() {
+                            clearTimeout(timeoutId);
+                            reject(new Error('Request timeout'));
+                        };
+                        
+                        // Send request
+                        if (config.method === 'GET') {
+                            xhr.send();
+                        } else {
+                            const formData = new FormData();
+                            if (config.data) {
+                                Object.keys(config.data).forEach(key => {
+                                    formData.append(key, config.data[key]);
+                                });
+                            }
+                            xhr.send(formData);
+                        }
+                    });
+                };
+                
+                function parseHeaders(headerString) {
+                    const headers = {};
+                    headerString.split('\r\n').forEach(line => {
+                        const [key, value] = line.split(': ');
+                        if (key && value) {
+                            headers[key.toLowerCase()] = value;
+                        }
+                    });
+                    return headers;
+                }
+                
+                // Initialize PWA if supported
+                if ('serviceWorker' in navigator) {
+                    if (window.AppConfig.debug) {
+                        navigator.serviceWorker.getRegistrations().then(registrations => {
+                            registrations.forEach(registration => registration.unregister());
+                        });
+                    } else {
+                        // Register service worker for production
+                        // navigator.serviceWorker.register('/sw.js');
+                    }
+                }
+                
+                console.log('Global utilities initialized');
+            };
+            
+            // Expose utilities to global scope
+            window.GlobalUtils = {
+                showToast: window.showToast,
+                confirmAction: window.confirmAction,
+                setLoadingState: window.setLoadingState,
+                validateForm: window.validateForm,
+                makeAjaxRequest: window.makeAjaxRequest,
+                EventBus: window.EventBus,
+                AppConfig: window.AppConfig
+            };
+            
+            // Error boundary
+            window.addEventListener('error', function(e) {
+                console.error('Global error:', e.error);
+                
+                if (e.error && e.error.message) {
+                    showToast(`خطا: ${e.error.message}`, 'danger');
+                }
+            });
+            
+            // Unhandled promise rejections
+            window.addEventListener('unhandledrejection', function(e) {
+                console.error('Unhandled promise rejection:', e.reason);
+                
+                if (e.reason && e.reason.message) {
+                    showToast(`خطا: ${e.reason.message}`, 'danger');
+                }
+                
+                e.preventDefault();
+            });
+            
+        })();
+    </script>
+</body>
+</html>

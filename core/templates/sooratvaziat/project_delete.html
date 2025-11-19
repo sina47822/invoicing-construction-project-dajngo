@@ -1,0 +1,1073 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}حذف پروژه - {{ project.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header با breadcrumbs -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb" class="d-none d-md-block">
+                <ol class="breadcrumb breadcrumb-light">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'sooratvaziat:project_list' %}">
+                            <i class="bi bi-buildings me-1"></i>پروژه‌ها
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'sooratvaziat:project_detail' project.id %}">
+                            <i class="bi bi-eye me-1"></i>{{ project.project_name|truncatechars:30 }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        حذف پروژه
+                    </li>
+                </ol>
+            </nav>
+            
+            <h2 class="mb-1 text-danger">
+                <i class="bi bi-trash3 text-danger me-2"></i>
+                حذف پروژه: {{ project.project_name }}
+            </h2>
+            <p class="text-muted mb-0">
+                <small>
+                    <i class="bi bi-exclamation-triangle me-1 text-warning"></i>
+                    این عملیات قابل بازگشت نیست. لطفاً با دقت تصمیم بگیرید.
+                </small>
+            </p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{% url 'sooratvaziat:project_edit' project.id %}" 
+               class="btn btn-outline-warning">
+                <i class="bi bi-pencil me-2"></i>ویرایش
+            </a>
+            <a href="{% url 'sooratvaziat:project_detail' project.id %}" 
+               class="btn btn-outline-primary">
+                <i class="bi bi-eye me-2"></i>مشاهده
+            </a>
+            <a href="{% url 'sooratvaziat:project_list' %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-list-ul me-2"></i>لیست پروژه‌ها
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- کارت اصلی تأیید حذف -->
+            <div class="card border-0 shadow-lg" id="deleteCard">
+                <div class="card-header bg-danger text-white border-0 position-relative overflow-hidden">
+                    <div class="position-absolute top-0 end-0 p-3">
+                        <i class="bi bi-exclamation-triangle-fill display-4 opacity-10"></i>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 p-3">
+                        <i class="bi bi-trash3-fill display-4 opacity-10"></i>
+                    </div>
+                    <div class="text-center">
+                        <i class="bi bi-exclamation-octagon-fill display-5 me-2"></i>
+                        <h4 class="d-inline card-title mb-0">تأیید حذف پروژه</h4>
+                    </div>
+                    <div class="card-tools position-absolute top-0 end-0 p-2">
+                        <button type="button" class="btn-close btn-close-white" onclick="window.history.back()"></button>
+                    </div>
+                </div>
+                
+                <div class="card-body p-5 text-center">
+                    <!-- آیکون هشدار -->
+                    <div class="mb-4">
+                        <div class="alert alert-danger d-inline-block p-4 rounded-circle shadow-lg" 
+                             style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-trash3-fill display-4 text-danger"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- عنوان اصلی -->
+                    <h3 class="text-danger mb-3 fw-bold">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        آیا مطمئن هستید؟
+                    </h3>
+                    
+                    <!-- اطلاعات پروژه -->
+                    <div class="alert alert-light border border-danger-subtle mb-4">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <i class="bi bi-building display-6 text-primary mb-2"></i>
+                                    <div class="h6 fw-bold text-primary">{{ project.project_name }}</div>
+                                    <small class="text-muted">نام پروژه</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <i class="bi bi-hash display-6 text-info mb-2"></i>
+                                    <div class="h6 fw-bold text-info">{{ project.project_code }}</div>
+                                    <small class="text-muted">کد پروژه</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <i class="bi bi-calendar-check display-6 text-success mb-2"></i>
+                                    <div class="h6 fw-bold text-success">
+                                        {{ project.execution_year }}
+                                    </div>
+                                    <small class="text-muted">سال اجرا</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    {% if project.client %}
+                                        <i class="bi bi-person-check display-6 text-warning mb-2"></i>
+                                        <div class="h6 fw-bold text-warning">
+                                            {{ project.client.name|truncatechars:15 }}
+                                        </div>
+                                        <small class="text-muted">کارفرما</small>
+                                    {% else %}
+                                        <i class="bi bi-person-x display-6 text-primary mb-2"></i>
+                                        <div class="h6 text-primary">-</div>
+                                        <small class="text-muted">کارفرما</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- هشدارهای مهم -->
+                    <div class="alert alert-warning mb-4" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill text-warning me-3 fs-3"></i>
+                            <div>
+                                <h5 class="alert-heading mb-2">⚠️ هشدار مهم</h5>
+                                <ul class="mb-0">
+                                    <li class="mb-1">
+                                        <strong>حذف دائمی:</strong> این پروژه به طور کامل از سیستم حذف خواهد شد
+                                    </li>
+                                    <li class="mb-1">
+                                        <strong>داده‌های مرتبط:</strong> تمام صورت‌جلسات، متره‌ها، گزارش‌ها و آمارهای مرتبط از بین خواهد رفت
+                                    </li>
+                                    <li class="mb-1">
+                                        <strong>عدم بازیابی:</strong> امکان بازیابی اطلاعات حذف شده وجود ندارد
+                                    </li>
+                                    <li>
+                                        <strong>تأثیر بر گزارش‌ها:</strong> تمام گزارش‌های مالی و آماری مرتبط تغییر خواهد کرد
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- آمار پروژه -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-journal-text display-6 text-info mb-2"></i>
+                                    <div class="h4 fw-bold text-info">
+                                        {% if sessions_count %}{{ sessions_count }}{% else %}0{% endif %}
+                                    </div>
+                                    <small class="text-muted">صورت‌جلسه</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-list-check display-6 text-success mb-2"></i>
+                                    <div class="h4 fw-bold text-success">
+                                        {% if items_count %}{{ items_count }}{% else %}0{% endif %}
+                                    </div>
+                                    <small class="text-muted">آیتم متره</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-currency-rial display-6 text-danger mb-2"></i>
+                                    <div class="h4 fw-bold text-danger">
+                                        {% if project.total_contract_amount %}
+                                            {{ project.total_contract_amount|floatformat:0 }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">مبلغ قرارداد</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- فرم تأیید -->
+                    <form method="POST" id="deleteForm" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- فیلد تأیید -->
+                        <div class="mb-4">
+                            <div class="form-check form-check-lg">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="confirmDelete" 
+                                       required
+                                       style="transform: scale(1.2);">
+                                <label class="form-check-label fw-semibold fs-5" for="confirmDelete">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <strong>من از عواقب حذف آگاه هستم و تأیید می‌کنم</strong>
+                                </label>
+                                <div class="form-text">
+                                    این تأیید الزامی است و بدون آن عملیات حذف انجام نمی‌شود
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- فیلد تایپ نام پروژه (امنیت اضافی) -->
+                        <div class="mb-4">
+                            <div class="alert alert-info">
+                                <i class="bi bi-lock-fill me-2"></i>
+                                <strong>تأیید امنیتی:</strong> برای اطمینان از تصمیم‌گیری آگاهانه، 
+                                نام کامل پروژه را در کادر زیر تایپ کنید:
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-keyboard text-muted"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="projectNameConfirm" 
+                                       placeholder="نام کامل پروژه را تایپ کنید..."
+                                       required
+                                       style="font-size: 1.1rem; padding: 1rem;">
+                                <span class="input-group-text text-danger" id="nameMatchIndicator">
+                                    <i class="bi bi-x-circle"></i> مطابقت ندارد
+                                </span>
+                            </div>
+                            <div class="form-text text-danger" id="nameError" style="display: none;">
+                                نام وارد شده با نام پروژه مطابقت ندارد
+                            </div>
+                        </div>
+                        
+                        <!-- دکمه‌های عمل -->
+                        <div class="d-flex flex-column flex-md-row gap-3 justify-content-center align-items-center">
+                            <a href="{% url 'sooratvaziat:project_edit' project.id %}" 
+                               class="btn btn-outline-warning btn-lg px-5 py-3">
+                                <i class="bi bi-pencil me-2"></i>
+                                ویرایش به جای حذف
+                            </a>
+                            
+                            <a href="{% url 'sooratvaziat:project_detail' project.id %}" 
+                               class="btn btn-outline-primary btn-lg px-5 py-3">
+                                <i class="bi bi-eye me-2"></i>
+                                مشاهده جزئیات
+                            </a>
+                            
+                            <button type="button" 
+                                    class="btn btn-outline-secondary btn-lg px-5 py-3" 
+                                    onclick="window.history.back()">
+                                <i class="bi bi-arrow-right me-2"></i>
+                                انصراف
+                            </button>
+                            
+                            <button type="submit" 
+                                    class="btn btn-danger btn-lg px-5 py-3" 
+                                    id="deleteBtn"
+                                    disabled
+                                    style="min-width: 160px;">
+                                <i class="bi bi-trash3-fill me-2"></i>
+                                <span class="delete-text">حذف پروژه</span>
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Footer کارت -->
+                <div class="card-footer bg-light border-0 text-center py-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        در صورت نیاز به حذف موقت، می‌توانید پروژه را از حالت "فعال" خارج کنید.
+                        <a href="#" onclick="showSoftDeleteInfo()" class="text-decoration-none">
+                            <i class="bi bi-question-circle me-1"></i>اطلاعات بیشتر
+                        </a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal اطلاعات حذف نرم -->
+    <div class="modal fade" id="softDeleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle me-2"></i>
+                        حذف نرم (غیرفعال‌سازی) پروژه
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>حذف نرم چیست؟</strong>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="card border-0 h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        مزایای حذف نرم
+                                    </h6>
+                                    <ul class="list-unstyled">
+                                        <li class="mb-2">
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                            <strong>قابل بازگشت:</strong> در هر زمان قابل فعال‌سازی مجدد
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                            <strong>حفظ داده‌ها:</strong> تمام اطلاعات و صورت‌جلسات حفظ می‌شود
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                            <strong>امنیت بیشتر:</strong> از حذف تصادفی جلوگیری می‌کند
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-0 h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-warning">
+                                        <i class="bi bi-exclamation-circle me-2"></i>
+                                        نحوه استفاده
+                                    </h6>
+                                    <ol class="list-unstyled">
+                                        <li class="mb-2">
+                                            <i class="bi bi-power me-2 text-warning"></i>
+                                            <strong>غیرفعال‌سازی:</strong> از دکمه "تغییر وضعیت" در لیست پروژه‌ها
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="bi bi-eye me-2 text-warning"></i>
+                                            <strong>مخفی از لیست:</strong> پروژه از لیست‌های اصلی حذف می‌شود
+                                        </li>
+                                        <li>
+                                            <i class="bi bi-search me-2 text-warning"></i>
+                                            <strong>جستجو:</strong> همچنان از طریق جستجو قابل دسترسی است
+                                        </li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>توصیه:</strong> برای اکثر موارد، استفاده از حذف نرم مناسب‌تر است. 
+                        فقط در صورتی که مطمئن هستید که به هیچ وجه به این پروژه نیاز ندارید، 
+                        از حذف کامل استفاده کنید.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        بستن
+                    </button>
+                    <a href="{% url 'sooratvaziat:project_list' %}" class="btn btn-outline-info">
+                        <i class="bi bi-list-ul me-2"></i>
+                        مشاهده لیست پروژه‌ها
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- اطلاعات اضافی در انتها -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light border-0">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2 text-primary"></i>
+                    تاریخچه پروژه
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h5 fw-bold text-primary mb-1">
+                                {{ project.execution_year }}
+                            </div>
+                            <small class="text-muted">سال اجرا</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h5 fw-bold text-info mb-1">
+                                {{ project.created_at|date:"Y/m/d" }}
+                            </div>
+                            <small class="text-muted">ایجاد شده</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h5 fw-bold text-primary mb-1">
+                                {{ project.updated_at|date:"Y/m/d" }}
+                            </div>
+                            <small class="text-muted">آخرین ویرایش</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            {% if project.status %}
+                                <div class="h5 fw-bold text-{% if project.status == 'active' %}success{% elif project.status == 'completed' %}info{% else %}warning{% endif %} mb-1">
+                                    {{ project.get_status_display|default:project.status }}
+                                </div>
+                            {% else %}
+                                <div class="h5 text-muted mb-1">-</div>
+                            {% endif %}
+                            <small class="text-muted">وضعیت</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* استایل‌های خاص صفحه حذف */
+body {
+    background: linear-gradient(135deg, #ffffff 0%, #e9ecef 100%);
+    min-height: 100vh;
+}
+
+#deleteCard {
+    border-radius: 20px !important;
+    background: linear-gradient(145deg, #ffffff, #ffffff);
+    box-shadow: 0 20px 40px rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.1) !important;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    border-radius: 20px 20px 0 0 !important;
+    position: relative;
+    overflow: hidden;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-size: 30px 30px;
+}
+
+.card-body {
+    background: #fff;
+    border-radius: 0 0 20px 20px;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border: 1px solid #f5c2c7;
+    color: #721c24;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-danger::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-danger:hover::before {
+    left: 100%;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.btn-danger:disabled {
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.form-check-input:checked {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.form-check-input:focus {
+    border-color: #dc3545;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+#projectNameConfirm {
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    text-align: center;
+}
+
+#projectNameConfirm:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15);
+    transform: scale(1.02);
+}
+
+#projectNameConfirm.valid {
+    border-color: #28a745;
+    background-color: #d4edda;
+}
+
+#projectNameConfirm.invalid {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+#nameMatchIndicator.valid {
+    color: #28a745;
+}
+
+#nameMatchIndicator.valid i {
+    color: #28a745 !important;
+}
+
+#nameMatchIndicator.valid i::before {
+    content: "\f058" !important; /* bi-check-circle */
+}
+
+.input-group-text {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 10px 0 0 10px;
+}
+
+.card {
+    border-radius: 15px !important;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.breadcrumb-light .breadcrumb-item.active {
+    color: #dc3545 !important;
+}
+
+.breadcrumb-light .breadcrumb-item a:hover {
+    color: #dc3545;
+}
+
+/* انیمیشن‌ها */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: stretch !important;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    
+    #deleteCard {
+        margin: 0 1rem;
+    }
+    
+    .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    .input-group {
+        margin-bottom: 1rem;
+    }
+    
+    .h3 {
+        font-size: 1.75rem;
+    }
+    
+    .display-6 {
+        font-size: 2.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        min-height: 100px;
+        padding: 1rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem 1rem !important;
+    }
+    
+    .btn {
+        margin-bottom: 0.75rem;
+    }
+    
+    .row.g-3 > .col-md-3,
+    .row.g-3 > .col-md-4,
+    .row.g-3 > .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    #projectNameConfirm {
+        font-size: 1rem;
+        padding: 0.75rem;
+    }
+}
+
+/* حالت loading */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+}
+
+.loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* استایل‌های خاص برای آمار */
+.card.bg-light {
+    background: linear-gradient(135deg, #ffffff 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6 !important;
+}
+
+.card-body.text-center i {
+    opacity: 0.7;
+}
+
+.card-body.text-center:hover i {
+    opacity: 1;
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteForm');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const projectNameConfirm = document.getElementById('projectNameConfirm');
+    const nameMatchIndicator = document.getElementById('nameMatchIndicator');
+    const nameError = document.getElementById('nameError');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const projectName = "{{ project.project_name }}";
+    const deleteText = deleteBtn.querySelector('.delete-text');
+    
+    // متغیر برای ردیابی تأیید
+    let isConfirmed = false;
+    let nameConfirmed = false;
+    
+    // تابع بررسی مطابقت نام
+    function checkNameMatch() {
+        const inputValue = projectNameConfirm.value.trim();
+        nameConfirmed = inputValue === projectName;
+        
+        if (nameConfirmed) {
+            projectNameConfirm.classList.remove('invalid');
+            projectNameConfirm.classList.add('valid');
+            nameMatchIndicator.innerHTML = '<i class="bi bi-check-circle"></i> مطابقت دارد';
+            nameMatchIndicator.classList.add('valid');
+            nameError.style.display = 'none';
+        } else {
+            projectNameConfirm.classList.remove('valid');
+            projectNameConfirm.classList.add('invalid');
+            nameMatchIndicator.innerHTML = '<i class="bi bi-x-circle"></i> مطابقت ندارد';
+            nameMatchIndicator.classList.remove('valid');
+            nameError.style.display = 'block';
+        }
+        
+        updateDeleteButtonState();
+    }
+    
+    // تابع به‌روزرسانی وضعیت دکمه حذف
+    function updateDeleteButtonState() {
+        const allConfirmed = confirmDelete.checked && nameConfirmed;
+        deleteBtn.disabled = !allConfirmed;
+        
+        if (allConfirmed) {
+            deleteBtn.classList.remove('btn-secondary');
+            deleteBtn.classList.add('btn-danger');
+            deleteBtn.style.opacity = '1';
+            deleteBtn.innerHTML = `
+                <i class="bi bi-trash3-fill me-2"></i>
+                <span class="delete-text">حذف قطعی پروژه</span>
+            `;
+        } else {
+            deleteBtn.classList.remove('btn-danger');
+            deleteBtn.classList.add('btn-secondary');
+            deleteBtn.innerHTML = `
+                <i class="bi bi-lock-fill me-2"></i>
+                <span class="delete-text">تأیید الزامی است</span>
+            `;
+        }
+    }
+    
+    // Event listeners
+    confirmDelete.addEventListener('change', function() {
+        isConfirmed = this.checked;
+        updateDeleteButtonState();
+        
+        // انیمیشن تأیید
+        if (this.checked) {
+            this.parentElement.classList.add('fade-in');
+            showToast('تأیید انجام شد', 'success');
+        }
+    });
+    
+    projectNameConfirm.addEventListener('input', function() {
+        // محدود کردن طول ورودی
+        if (this.value.length > projectName.length + 5) {
+            this.value = projectName;
+        }
+        
+        // تأخیر برای debounce
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(checkNameMatch, 300);
+        
+        // Highlight کردن حروف مطابقت
+        highlightMatchingChars();
+    });
+    
+    projectNameConfirm.addEventListener('blur', function() {
+        if (!this.value.trim()) {
+            this.classList.remove('valid', 'invalid');
+            nameMatchIndicator.innerHTML = '<i class="bi bi-x-circle"></i> مطابقت ندارد';
+            nameMatchIndicator.classList.remove('valid');
+            nameError.style.display = 'none';
+            nameConfirmed = false;
+            updateDeleteButtonState();
+        }
+    });
+    
+    // تابع Highlight حروف مطابقت
+    function highlightMatchingChars() {
+        const inputValue = projectNameConfirm.value;
+        projectNameConfirm.style.background = 'transparent';
+        
+        if (inputValue.length > 0) {
+            const matchLength = inputValue.length;
+            if (inputValue.toLowerCase() === projectName.substring(0, matchLength).toLowerCase()) {
+                // ایجاد gradient برای نشان دادن پیشرفت
+                const gradient = `linear-gradient(to right, 
+                    #d4edda ${matchLength * 10}%, 
+                    transparent ${matchLength * 10}%)`;
+                projectNameConfirm.style.background = gradient;
+                projectNameConfirm.style.backgroundSize = '100% 100%';
+            }
+        }
+    }
+    
+    // Auto-focus
+    projectNameConfirm.focus();
+    projectNameConfirm.select();
+    
+    // Submit handler
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Double-check تأیید
+        if (!confirmDelete.checked) {
+            e.preventDefault();
+            showToast('لطفاً ابتدا تأیید را انجام دهید', 'warning');
+            confirmDelete.focus();
+            confirmDelete.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+        
+        if (!nameConfirmed) {
+            e.preventDefault();
+            showToast('نام پروژه مطابقت ندارد. لطفاً دقیق تایپ کنید', 'danger');
+            projectNameConfirm.focus();
+            projectNameConfirm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            projectNameConfirm.classList.add('shake');
+            setTimeout(() => projectNameConfirm.classList.remove('shake'), 500);
+            return false;
+        }
+        
+        // Final confirmation
+        const finalConfirm = confirm(
+            `⚠️ تأیید نهایی حذف پروژه\n\n` +
+            `نام پروژه: "${project.project_name}"\n` +
+            `کد: ${project.project_code}\n\n` +
+            `آیا واقعاً می‌خواهید این پروژه و تمام اطلاعات مرتبط (صورت‌جلسات، متره‌ها، گزارش‌ها) را به طور دائمی حذف کنید؟\n\n` +
+            `این عملیات قابل بازگشت نیست!`
+        );
+        
+        if (!finalConfirm) {
+            showToast('عملیات لغو شد', 'info');
+            return false;
+        }
+        
+        // Loading state
+        showLoadingState();
+        
+        // Submit form
+        setTimeout(() => {
+            form.submit();
+        }, 1000);
+    });
+    
+    // تابع نمایش Loading
+    function showLoadingState() {
+        // غیرفعال کردن دکمه‌ها
+        const buttons = document.querySelectorAll('button, a[href]');
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.style.pointerEvents = 'none';
+        });
+        
+        // نمایش overlay loading
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'loading-overlay fade-in';
+        loadingOverlay.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-danger mb-3" role="status">
+                    <span class="visually-hidden">در حال حذف...</span>
+                </div>
+                <h4 class="text-danger mb-2">در حال حذف پروژه</h4>
+                <p class="text-muted mb-0">لطفاً صبر کنید...</p>
+                <div class="mt-3">
+                    <div class="spinner-grow spinner-grow-sm text-danger me-2" role="status"></div>
+                    <div class="spinner-grow spinner-grow-sm text-warning me-2" role="status"></div>
+                    <div class="spinner-grow spinner-grow-sm text-info" role="status"></div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(loadingOverlay);
+        
+        // تغییر متن دکمه
+        deleteText.textContent = 'در حال حذف...';
+        deleteBtn.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            در حال حذف...
+        `;
+    }
+    
+    // تابع نمایش اطلاعات حذف نرم
+    window.showSoftDeleteInfo = function() {
+        const modal = new bootstrap.Modal(document.getElementById('softDeleteModal'));
+        modal.show();
+        showToast('اطلاعات حذف نرم نمایش داده شد', 'info');
+    };
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+Shift+D برای تأیید مستقیم (فقط در صورت مطابقت نام)
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+            e.preventDefault();
+            if (nameConfirmed && confirmDelete.checked) {
+                form.submit();
+            } else {
+                showToast('ابتدا تمام تأییدها را انجام دهید', 'warning');
+            }
+        }
+        
+        // Escape برای انصراف
+        if (e.key === 'Escape') {
+            if (confirm('آیا می‌خواهید از صفحه حذف خارج شوید؟')) {
+                window.history.back();
+            }
+        }
+        
+        // Enter در فیلد نام برای بررسی
+        if (e.key === 'Enter' && document.activeElement === projectNameConfirm) {
+            e.preventDefault();
+            checkNameMatch();
+            if (nameConfirmed) {
+                confirmDelete.focus();
+            }
+        }
+    });
+    
+    // Auto-suggest برای نام پروژه
+    projectNameConfirm.addEventListener('focus', function() {
+        if (!this.value.trim()) {
+            showToast(`برای تأیید، "${projectName}" را تایپ کنید`, 'info');
+        }
+    });
+    
+    // Progress indicator برای تایپ نام
+    const originalNameLength = projectName.length;
+    projectNameConfirm.addEventListener('input', function() {
+        const progress = (this.value.length / originalNameLength) * 100;
+        const progressBar = document.createElement('div');
+        progressBar.id = 'nameProgress';
+        progressBar.className = 'progress mt-2';
+        progressBar.style.height = '4px';
+        progressBar.style.borderRadius = '2px';
+        
+        if (!document.getElementById('nameProgress')) {
+            this.parentElement.appendChild(progressBar);
+        }
+        
+        const progressFill = progressBar.querySelector('.progress-bar') || 
+                           document.createElement('div');
+        progressFill.className = 'progress-bar';
+        progressFill.style.width = `${Math.min(progress, 100)}%`;
+        progressFill.style.background = nameConfirmed ? 
+            '#28a745' : (progress > 50 ? '#ffc107' : '#dc3545');
+        progressFill.setAttribute('role', 'progressbar');
+        progressFill.setAttribute('aria-valuenow', progress);
+        progressFill.setAttribute('aria-valuemin', '0');
+        progressFill.setAttribute('aria-valuemax', '100');
+        
+        if (!progressBar.querySelector('.progress-bar')) {
+            progressBar.appendChild(progressFill);
+        }
+    });
+    
+    // Cleanup function
+    window.addEventListener('beforeunload', function() {
+        // پاک کردن progress bar
+        const progressBar = document.getElementById('nameProgress');
+        if (progressBar) {
+            progressBar.remove();
+        }
+    });
+    
+    // Toast notifications برای messages
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags %}
+                setTimeout(() => {
+                    showToast('{{ message }}', '{% if "error" in message.tags %}danger{% elif "success" in message.tags %}success{% elif "warning" in message.tags %}warning{% else %}info{% endif %}');
+                }, 500);
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
+    // انیمیشن‌های اضافی
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease-out';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 200);
+    });
+    
+    // Warning animation برای header
+    const header = document.querySelector('.card-header');
+    if (header) {
+        setInterval(() => {
+            header.style.boxShadow = Math.random() > 0.5 ? 
+                '0 0 20px rgba(220, 53, 69, 0.3)' : '0 0 20px rgba(220, 53, 69, 0.1)';
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,399 @@
+<!-- templates/sooratvaziat/project_list.html -->
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- ========== Header ========== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1 text-black">{{ page_title }}</h1>
+                    <p class="mb-0 text-muted">مدیریت پروژه‌های شما</p>
+                </div>
+                <a href="{% url 'sooratvaziat:project_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> پروژه جدید
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== Statistics Cards ========== -->
+    {% if stats_summary %}
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                تعداد پروژه‌ها
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-black">
+                                {{ stats_summary.total_projects }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                مبلغ کل قرارداد
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-black">
+                                {{ stats_summary.total_contract }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-contract fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                مبلغ متره شده
+                            </div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-black">
+                                        {{ stats_summary.total_measured }}
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" 
+                                             role="progressbar" 
+                                             style="width: {{ formatted_overall_progress }};" 
+                                             aria-valuenow="{{ overall_progress_percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                تعداد صورت‌جلسات
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-black">
+                                {{ stats_summary.total_sessions }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ========== Search Form ========== -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="form-inline">
+                <div class="input-group mb-3">
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="جستجو در نام، کد یا توضیحات..." 
+                           value="{{ search_query }}"
+                           style="max-width: 300px;">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                {% if search_query %}
+                <a href="{% url 'sooratvaziat:project_list' %}" class="btn btn-secondary ml-2">پاک کردن</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== Projects Table ========== -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                لیست پروژه‌ها 
+                {% if page_obj.paginator.count > 10 %}
+                (صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }})
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if projects %}
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>کد پروژه</th>
+                            <th>نام پروژه</th>
+                            <th>سال اجرا</th>
+                            <th>مبلغ قرارداد</th>
+                            <th>مبلغ متره</th>
+                            <th>درصد پیشرفت</th>
+                            <th>تعداد صورت‌جلسات</th>
+                            <th>تعداد آیتم‌ها</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr class="{% if project.financial_info.progress_class %}project-{{ project.financial_info.progress_class }}{% endif %}">
+                            <td>
+                                <strong>{{ project.project_code }}</strong>
+                                {% if project.client %}
+                                <br><small class="text-muted">کارفرما: {{ project.client_name }}</small>
+                                {% else %}
+                                <br><small class="text-muted">کارفرما: نامشخص</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'sooratvaziat:project_detail' project.id %}" class="text-decoration-none">
+                                    {{ project.project_name }}
+                                </a>
+                                {% if project.description %}
+                                <br><small class="text-muted">{{ project.description|truncatewords:10 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ project.execution_year }}</td>
+                            <td>
+                                <div class="text-right">
+                                    {{ project.total_contract_amount|floatformat:0}}
+                                    {% if project.financial_info.total_amount > 0 %}
+                                    <br><small class="text-success">
+                                        <i class="fas fa-check-circle"></i> 
+                                        {{ project.financial_info.formatted_total_amount }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-right">
+                                    {{ project.financial_info.formatted_total_amount }}
+                                    <br><small class="text-info">
+                                        با مالیات: {{ project.financial_info.formatted_total_vat }}
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar {% if project.financial_info.progress_percentage >= 90 %}bg-success{% elif project.financial_info.progress_percentage >= 70 %}bg-warning{% elif project.financial_info.progress_percentage >= 50 %}bg-info{% elif project.financial_info.progress_percentage >= 25 %}bg-orange{% else %}bg-danger{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ project.financial_info.progress_percentage }}%;"
+                                        aria-valuenow="{{ project.financial_info.progress_percentage }}"
+                                        aria-valuemin="0" 
+                                        aria-valuemax="100"
+                                        title="{% if project.financial_info.progress_percentage >= 100 %}تکمیل شده{% else %}{{ project.financial_info.progress_percentage|floatformat:1 }}%{% endif %}">
+                                        {{ project.financial_info.progress_percentage_display }}
+                                    </div>
+                                </div>
+                                {% if project.financial_info.last_updated %}
+                                <small class="text-muted d-block text-center">
+                                    به‌روزرسانی: {{ project.financial_info.last_updated|date:"Y/m/d H:i" }}
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    <span class="badge badge-primary">{{ project.financial_info.sessions_count }}</span>
+                                    <br>
+                                    <small class="text-success">
+                                        <i class="fas fa-check"></i> 
+                                        {{ project.financial_info.approved_sessions_count }}
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    {{ project.financial_info.total_items_count|default:0 }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group-vertical" role="group">
+                                    <a href="{% url 'sooratvaziat:project_detail' project.id %}" 
+                                    class="btn btn-sm btn-info mb-1" 
+                                    title="مشاهده جزئیات">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'sooratvaziat:project_edit' project.id %}" 
+                                    class="btn btn-sm btn-warning mb-1" 
+                                    title="ویرایش">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'sooratvaziat:session_list' project.id %}" 
+                                    class="btn btn-sm btn-success mb-1" 
+                                    title="صورت‌جلسات">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    <a href="{% url 'sooratvaziat:project_financial_report' project.id %}" 
+                                    class="btn btn-sm btn-secondary mb-1" 
+                                    title="گزارش مالی">
+                                        <i class="fas fa-chart-line"></i>
+                                    </a>
+                                    <a href="{% url 'sooratvaziat:project_duplicate' project.id %}" 
+                                    class="btn btn-sm btn-light mb-1" 
+                                    title="کپی پروژه">
+                                        <i class="fas fa-copy"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            title="حذف" 
+                                            onclick="confirmDelete({{ project.id }}, '{{ project.project_name }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>هیچ پروژه‌ای یافت نشد</p>
+                                {% if search_query %}
+                                <p><small>جستجو: "{{ search_query }}"</small></p>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ========== Pagination ========== -->
+            {% if page_obj.has_other_pages %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav>
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">اول</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">قبلی</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">بعدی</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">آخر</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">شما هنوز هیچ پروژه‌ای ایجاد نکرده‌اید</h5>
+                <p class="text-muted">برای شروع، یک پروژه جدید ایجاد کنید.</p>
+                <a href="{% url 'sooratvaziat:project_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> ایجاد اولین پروژه
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ========== JavaScript برای تأیید حذف ========== -->
+<script>
+function confirmDelete(projectId, projectName) {
+    if (confirm(`آیا مطمئن هستید که می‌خواهید پروژه "${projectName}" را حذف کنید؟\n\nاین عمل قابل بازگشت نیست.`)) {
+        // ایجاد فرم مخفی برای POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{% url 'sooratvaziat:project_delete' 0 %}".replace('0', projectId);
+        
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        form.appendChild(csrfInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<!-- ========== CSS اضافی ========== -->
+<style>
+.progress-high { border-left: 4px solid #28a745 !important; }
+.progress-medium { border-left: 4px solid #ffc107 !important; }
+.progress-good { border-left: 4px solid #17a2b8 !important; }
+.progress-low { border-left: 4px solid #fd7e14 !important; }
+.progress-very-low { border-left: 4px solid #dc3545 !important; }
+
+.table th, .table td { text-align: center; vertical-align: middle; }
+.table .text-right { text-align: right !important; }
+.table .text-left { text-align: left !important; }
+
+.project-progress { position: relative; }
+.project-progress .progress { margin-bottom: 0.5rem; }
+
+.badge { font-size: 0.75em; }
+.btn-group-vertical .btn { border-radius: 0.25rem !important; margin: 1px; }
+
+@media (max-width: 768px) {
+    .btn-group-vertical { width: 100%; }
+    .btn-group-vertical .btn { width: 100%; margin: 2px 0; }
+    .table-responsive { font-size: 0.875em; }
+}
+</style>
+
+{% endblock %}

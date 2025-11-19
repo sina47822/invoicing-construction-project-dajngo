@@ -1,0 +1,413 @@
+{% extends 'layout/base.html' %}
+{% load static %}
+
+{% block title %}نتایج جستجو - {{ query }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Search Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-search text-primary me-2"></i>
+                        نتایج جستجو برای: "{{ query }}"
+                    </h2>
+                    {% if total_results > 0 %}
+                        <p class="text-muted mb-0">
+                            <small>{{ total_results }} نتیجه یافت شد</small>
+                        </p>
+                    {% else %}
+                        <p class="text-muted mb-0">
+                            <small>نتیجه‌ای یافت نشد</small>
+                        </p>
+                    {% endif %}
+                </div>
+                
+                <!-- Back to Dashboard -->
+                <a href="{% url 'sooratvaziat:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-right me-2"></i>بازگشت به داشبورد
+                </a>
+            </div>
+
+            <!-- Search Form -->
+            {% include 'components/search_form.html' %}
+
+            {% if search_results %}
+                <!-- Search Results -->
+                <div class="row g-4">
+                    {% for result in search_results %}
+                        <div class="col-lg-6 col-xl-4">
+                            <div class="card h-100 shadow-sm border-0 search-result-card">
+                                <div class="card-body d-flex flex-column p-4">
+                                    <!-- Result Icon -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3">
+                                            <i class="{{ result.icon }} fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 text-primary">{{ result.type|title }}</h6>
+                                            <small class="text-muted">{{ result.description }}</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Result Title -->
+                                    <h5 class="card-title mb-2">
+                                        <a href="{{ result.url }}" class="text-decoration-none stretched-link">
+                                            {{ result.title }}
+                                        </a>
+                                    </h5>
+
+                                    <!-- Result Description -->
+                                    {% if result.description %}
+                                        <p class="card-text text-muted small mb-0 flex-grow-1">
+                                            {{ result.description }}
+                                        </p>
+                                    {% endif %}
+
+                                    <!-- Result Actions -->
+                                    <div class="mt-auto pt-3">
+                                        <a href="{{ result.url }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye me-1"></i>مشاهده
+                                        </a>
+                                        <a href="{{ result.url }}" class="btn btn-link btn-sm p-0 text-decoration-none">
+                                            <i class="bi bi-arrow-left me-1"></i>رفتن به صفحه
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Search results pagination" class="mt-5">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- No Results -->
+                <div class="text-center py-5 my-5">
+                    <div class="mb-4">
+                        <i class="bi bi-search display-1 text-muted opacity-50"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">نتیجه‌ای یافت نشد</h4>
+                    <p class="text-muted mb-4">
+                        برای "{{ query }}" هیچ نتیجه‌ای یافت نشد. 
+                        <br>لطفاً عبارت دیگری امتحان کنید.
+                    </p>
+                    
+                    <!-- Search Suggestions -->
+                    <div class="row justify-content-center g-3 mb-4">
+                        <div class="col-auto">
+                            <a href="{% url 'sooratvaziat:projects' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-building me-1"></i>همه پروژه‌ها
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'sooratvaziat:reports' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-file-earmark-text me-1"></i>همه گزارش‌ها
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'sooratvaziat:riz_metre' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-rulers me-1"></i>ریز متره‌ها
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Try Again Form -->
+                    {% include 'components/search_form.html' %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-result-card {
+    transition: all 0.3s ease;
+    border-radius: 12px !important;
+}
+
+.search-result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.search-result-card .card-body {
+    border-radius: 12px;
+}
+
+.search-result-card .stretched-link {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.search-result-card .stretched-link:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.search-form-container {
+    background: linear-gradient(135deg, #ffffff 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.search-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+    transform: scale(1.02);
+}
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1050;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: none;
+}
+
+.search-suggestion-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #ffffff;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.search-suggestion-item:hover {
+    background-color: #ffffff;
+}
+
+.search-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.search-suggestion-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.75rem;
+    font-size: 1rem;
+}
+
+.no-results {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .search-form-container {
+        padding: 1rem;
+        margin: 0 -1rem;
+        border-radius: 0;
+        border: none;
+    }
+    
+    .search-input {
+        font-size: 1rem;
+    }
+    
+    .search-result-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchForm = document.querySelector('.search-form');
+    const searchInput = document.querySelector('#searchInput');
+    const searchSuggestions = document.querySelector('.search-suggestions');
+    
+    if (searchInput) {
+        // Debounced search
+        let searchTimeout;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    performAjaxSearch(query);
+                }, 300);
+            } else {
+                hideSuggestions();
+            }
+        });
+        
+        // Hide suggestions on outside click
+        document.addEventListener('click', function(e) {
+            if (!searchForm.contains(e.target)) {
+                hideSuggestions();
+            }
+        });
+        
+        // Search on Enter
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (searchInput.value.trim()) {
+                    searchForm.submit();
+                }
+            }
+        });
+    }
+    
+    function performAjaxSearch(query) {
+        const url = "{% url 'sooratvaziat:search_ajax' %}?q=" + encodeURIComponent(query);
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            displaySuggestions(data.results, query);
+        })
+        .catch(error => {
+            console.error('Search error:', error);
+            hideSuggestions();
+        });
+    }
+    
+    function displaySuggestions(results, query) {
+        if (searchSuggestions) {
+            searchSuggestions.innerHTML = '';
+            
+            if (results && results.length > 0) {
+                results.forEach(result => {
+                    const suggestion = document.createElement('div');
+                    suggestion.className = 'search-suggestion-item';
+                    suggestion.innerHTML = `
+                        <div class="bg-${result.type === 'project' ? 'primary' : 'secondary'} bg-opacity-10 text-${result.type === 'project' ? 'primary' : 'secondary'} search-suggestion-icon">
+                            <i class="${result.icon}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">${highlightText(result.title, query)}</div>
+                            <small class="text-muted">${result.type === 'project' ? 'پروژه' : 'گزارش'}</small>
+                        </div>
+                    `;
+                    
+                    suggestion.addEventListener('click', function() {
+                        window.location.href = result.url;
+                    });
+                    
+                    searchSuggestions.appendChild(suggestion);
+                });
+                
+                searchSuggestions.style.display = 'block';
+            } else {
+                const noResults = document.createElement('div');
+                noResults.className = 'search-suggestion-item text-muted';
+                noResults.innerHTML = `
+                    <i class="bi bi-search me-2"></i>
+                    هیچ نتیجه‌ای یافت نشد
+                `;
+                searchSuggestions.appendChild(noResults);
+                searchSuggestions.style.display = 'block';
+            }
+        }
+    }
+    
+    function highlightText(text, query) {
+        if (!query) return text;
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<mark class="bg-warning bg-opacity-25 fw-bold">$1</mark>');
+    }
+    
+    function hideSuggestions() {
+        if (searchSuggestions) {
+            searchSuggestions.style.display = 'none';
+            searchSuggestions.innerHTML = '';
+        }
+    }
+    
+    // Clear search on escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && searchInput) {
+            searchInput.value = '';
+            hideSuggestions();
+            searchInput.blur();
+        }
+    });
+    
+    // Track search events
+    if (searchForm) {
+        searchForm.addEventListener('submit', function() {
+            const query = searchInput.value.trim();
+            if (query) {
+                // Track search
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'search', {
+                        search_term: query
+                    });
+                }
+                
+                showToast(`جستجو برای "${query}"`, 'info');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

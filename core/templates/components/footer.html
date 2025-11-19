@@ -1,0 +1,130 @@
+<footer class="footer no-print">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <!-- Copyright -->
+            <div class="col-md-6">
+                <div class="text-center text-md-start">
+                    <span class="text-muted">
+                        &copy; {{ "now"|date:"Y" }} 
+                        <a href="#" class="text-decoration-none">سیستم مدیریت پروژه‌های عمرانی</a>. 
+                        تمامی حقوق محفوظ است.
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Links -->
+            <div class="col-md-6 mt-2 mt-md-0">
+                <ul class="list-inline text-center text-md-end mb-0">
+                    <li class="list-inline-item">
+                        <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="tooltip" title="راهنمای استفاده">
+                            <i class="bi bi-question-circle me-1"></i>راهنما
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="tooltip" title="شرایط استفاده">
+                            <i class="bi bi-shield-check me-1"></i>شرایط
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="tooltip" title="حریم خصوصی">
+                            <i class="bi bi-lock me-1"></i>حریم خصوصی
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="tooltip" title="تماس با ما">
+                            <i class="bi bi-envelope me-1"></i>تماس
+                        </a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="tooltip" title="وضعیت سیستم">
+                            <i class="bi bi-cpu me-1"></i>وضعیت: 
+                            <span class="text-success small fw-bold">عملکردی</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Additional Info -->
+        <div class="row mt-3 pt-2 border-top border-light">
+            <div class="col-12 text-center">
+                <small class="text-muted">
+                    <i class="bi bi-clock-history me-1"></i>
+                    آخرین به‌روزرسانی: {{ "now"|date:"Y/m/d H:i" }}
+                    {% if user.is_authenticated %}
+                        | کاربر: {{ user.get_full_name|default:user.username }}
+                    {% endif %}
+                    | 
+                    <a href="#" class="text-muted" onclick="showPageLoadTime()">زمان بارگذاری: <span id="loadTime">--</span> ثانیه</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+// Footer JavaScript
+(function() {
+    'use strict';
+    
+    // Page load time calculation
+    let startTime = window.performance && window.performance.timing 
+        ? window.performance.timing.navigationStart 
+        : Date.now();
+    
+    function showPageLoadTime() {
+        const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
+        document.getElementById('loadTime').textContent = loadTime;
+        
+        if (typeof showToast === 'function') {
+            showToast(`زمان بارگذاری صفحه: ${loadTime} ثانیه`, 'info', 'عملکرد');
+        }
+        
+        // Log performance
+        if (console && console.log) {
+            console.log(`Page load time: ${loadTime}s`);
+        }
+    }
+    
+    // Expose to global scope
+    window.showPageLoadTime = showPageLoadTime;
+    
+    // Auto-hide footer on scroll (optional)
+    let footerVisible = true;
+    const footer = document.querySelector('.footer');
+    
+    if (footer) {
+        let lastScrollY = window.scrollY;
+        
+        window.addEventListener('scroll', function() {
+            const currentScrollY = window.scrollY;
+            
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                // Scrolling down
+                if (footerVisible && window.innerHeight + currentScrollY >= document.body.scrollHeight - 200) {
+                    footerVisible = false;
+                    footer.style.transform = 'translateY(100%)';
+                    footer.style.transition = 'transform 0.3s ease';
+                }
+            } else {
+                // Scrolling up or at top
+                if (!footerVisible) {
+                    footerVisible = true;
+                    footer.style.transform = 'translateY(0)';
+                }
+            }
+            
+            lastScrollY = currentScrollY;
+        });
+        
+        // Show footer on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                footer.style.transform = 'translateY(0)';
+                footerVisible = true;
+            }, 100);
+        });
+    }
+    
+})();
+</script>

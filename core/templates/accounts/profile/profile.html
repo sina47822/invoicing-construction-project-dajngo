@@ -1,0 +1,30 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}پروفایل کاربر{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <img src="{{ user.profile.image.url|default:'/static/img/default-avatar.png' }}" alt="Avatar">
+    <div>
+        <h3>{{ user.get_full_name|default:user.username }}</h3>
+        <p class="mb-0">{{ user.email }}</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">اطلاعات حساب</h5>
+        <p><strong>نام کاربری:</strong> {{ user.username }}</p>
+        <p><strong>ایمیل:</strong> {{ user.email }}</p>
+        <p><strong>تاریخ عضویت:</strong> {{ user.date_joined|date:"Y-m-d" }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-3">تنظیمات سریع</h5>
+        <a href="{% url 'accounts:settings' %}" class="btn btn-outline-primary">ویرایش اطلاعات</a>
+        <a href="{% url 'accounts:password_reset' %}" class="btn btn-outline-secondary">تغییر رمز عبور</a>
+    </div>
+</div>
+{% endblock %}
