@@ -57,13 +57,16 @@ class MeasurementSession(models.Model):
     )
     session_date = models.DateField(
         verbose_name="تاریخ صورت‌جلسه",
-        help_text="تاریخ برگزاری صورت‌جلسه"
+        help_text="تاریخ برگزاری صورت‌جلسه",
+        null=True,  # اضافه کردن null=True برای داده‌های موجود
+        blank=True
     )
     discipline_choice = models.CharField(
         max_length=2, 
         choices=DisciplineChoices.choices, 
         verbose_name="رشته فعالیت",
-        help_text="نوع فهرست بها (ابنیه، مکانیک، برق، ...)"
+        help_text="نوع فهرست بها (ابنیه، مکانیک، برق، ...)",
+        default='01'  # مقدار پیش‌فرض
     )
     
     # اطلاعات توصیفی
@@ -77,7 +80,8 @@ class MeasurementSession(models.Model):
         blank=True, 
         null=True, 
         verbose_name="یادداشت‌ها",
-        help_text="یادداشت‌های داخلی"
+        help_text="یادداشت‌های داخلی",
+        default=''
     )
     
     # آمار پایه (بدون مجموع مالی)
@@ -95,7 +99,7 @@ class MeasurementSession(models.Model):
             ('approved', 'تایید‌شده'),
             ('rejected', 'رد‌شده'),
         ],
-        default='draft',
+        default='submitted',
         verbose_name="وضعیت"
     )
     is_active = models.BooleanField(
@@ -135,36 +139,15 @@ class MeasurementSession(models.Model):
         return f"صورت جلسه شماره {self.session_number} برای پروژه {self.project.project_code}"
     
     def save(self, *args, **kwargs):
-        """Override save برای تولید شماره و به‌روزرسانی آمار"""
+        """Override save ساده‌شده"""
         user = kwargs.pop('user', None)
         
         if not self.created_by:
             self.created_by = user or getattr(self, 'created_by', None)
         self.modified_by = user or getattr(self, 'modified_by', None)
         
-        # تولید خودکار شماره صورت‌جلسه
-        if not self.session_number:
-            last_session = MeasurementSession.objects.filter(
-                project=self.project,
-                discipline_choice=self.discipline_choice
-            ).order_by('-created_at').first()
-            
-            if last_session:
-                try:
-                    last_num = int(last_session.session_number.split('-')[-1])
-                    new_num = last_num + 1
-                except (ValueError, AttributeError):
-                    new_num = 1
-            else:
-                new_num = 1
-            
-            self.session_number = f"{self.get_discipline_display()[:2]}-{new_num:04d}"
-        
-        # به‌روزرسانی تعداد آیتم‌ها
-        self.items_count = self.items.filter(is_active=True).count()
-        
+        # فقط ذخیره کنید - بقیه کارها با سیگنال‌ها انجام میشه
         super().save(*args, **kwargs)
-    
     # ========== METODS FOR REPORTING ==========
     
     def get_items_grouped_by_pricelist(self):

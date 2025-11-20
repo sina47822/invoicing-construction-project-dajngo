@@ -518,46 +518,55 @@ def session_list(request, pk):
     """
     لیست صورت جلسات یک پروژه
     """
-    # فقط پروژه‌های کاربر جاری
     project = get_object_or_404(
         Project, 
         pk=pk, 
         user=request.user, 
         is_active=True
     )
-    
+
     try:
-        # فقط صورت جلسات مربوط به این پروژه
-        sessions = (
-            MeasurementSession.objects
-            .filter(project=project, is_active=True)
-            .select_related('created_by')
-            .prefetch_related('items')
-            .annotate(item_count=Count('items'))
-            .order_by('-session_date', '-created_at')
-        )
-        
-        # تبدیل تاریخ‌ها به جلالی
-        for session in sessions:
-            try:
-                if session.session_date:
-                    session.session_date_jalali = datetime2jalali(session.session_date).strftime("%Y/%m/%d")
-                else:
-                    session.session_date_jalali = "تاریخ نامشخص"
-            except Exception as e:
-                session.session_date_jalali = "خطا در تاریخ"
-                
+        # دریافت صورت جلسات مربوط به این پروژه
+        sessions = MeasurementSession.objects.filter(
+            project=project, 
+            is_active=True
+        ).annotate(
+            items_count=Count('items', filter=Q(items__is_active=True))
+        ).order_by('-created_at')
+
+        # محاسبه آمار کلی
+        total_sessions = sessions.count()
+        approved_sessions = sessions.filter(status='approved').count()
+        draft_sessions = sessions.filter(status='draft').count()
+
     except Exception as e:
-        messages.error(request, f"خطا در بارگذاری صورت جلسات: {str(e)}")
-        sessions = []
+        # اگر خطایی رخ داد، از مقادیر پیش‌فرض استفاده کن
+        sessions = MeasurementSession.objects.filter(
+            project=project, 
+            is_active=True
+        ).order_by('-created_at')
+        
+        # محاسبه دستی تعداد آیتم‌ها
+        for session in sessions:
+            session.items_count = session.items.filter(is_active=True).count()
+            # مقدار پیش‌فرض برای status اگر وجود ندارد
+            if not hasattr(session, 'status'):
+                session.status = 'draft'
+        
+        total_sessions = sessions.count()
+        approved_sessions = sessions.filter(status='approved').count() if hasattr(sessions.first(), 'status') else 0
+        draft_sessions = sessions.filter(status='draft').count() if hasattr(sessions.first(), 'status') else total_sessions
 
     context = {
         'title': f'لیست صورت‌جلسات - {project.project_name}',
-        'sessions': sessions,
         'project': project,
+        'sessions': sessions,
+        'total_sessions': total_sessions,
+        'approved_sessions': approved_sessions,
+        'draft_sessions': draft_sessions,
     }
     return render(request, 'sooratvaziat/session_list.html', context)
-
+    
 @login_required
 def MeasurementSessionView(request, pk):
     """

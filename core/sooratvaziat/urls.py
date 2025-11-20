@@ -17,7 +17,7 @@ urlpatterns = [
     path('riz_financial/<int:pk>/', riz_financial_discipline_list, name='riz_financial_discipline_list'),
     path('riz_financial/<int:pk>/<str:discipline_choice>/', riz_metre_financial, name='riz_financial'),
     path('sooratjalase/<int:pk>/', MeasurementSessionView, name='sooratjalase'),
-    path('session_list/<int:pk>/', session_list, name='session_list'),
+    # path('session_list/<int:pk>/', session_list, name='session_list'),
     path('detailed-session/<int:session_id>/', detailed_session, name='detailed_session'),
     path('financial/', project_financial_report_list, name='project_financial_report_list'),
     path('project/<int:pk>/financial-report/', views.project_financial_report, name='project_financial_report'),
@@ -35,9 +35,10 @@ urlpatterns = [
     path('projects/<int:pk>/delete/', views.project_delete, name='project_delete'),
     
     # صورت‌جلسات
-    # path('projects/<int:project_pk>/sessions/', views.session_list, name='session_list'),
+    path('projects/<int:pk>/sessions/', views.session_list, name='session_list'),
     # path('projects/<int:project_pk>/sessions/create/', views.session_create, name='session_create'),
     # path('projects/<int:project_pk>/sessions/<int:pk>/', views.session_detail, name='session_detail'),
+    # path('session/<int:session_id>/edit/', views.detailed_session_edit, name='session_edit'
     
     # پرداخت‌ها
     # path('projects/<int:project_pk>/payments/', views.payment_list, name='payment_list'),

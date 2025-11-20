@@ -33,6 +33,42 @@ _audit_logging_active = True
 
 # Store receivers for potential cleanup
 _audit_receivers = []
+# sooratvaziat/signals.py
+from .models import MeasurementSession, MeasurementSessionItem
+
+@receiver(post_save, sender=MeasurementSessionItem)
+@receiver(post_delete, sender=MeasurementSessionItem)
+def update_session_items_count(sender, instance, **kwargs):
+    """
+    به‌روزرسانی تعداد آیتم‌های صورت جلسه پس از تغییرات در آیتم‌ها
+    """
+    if instance.measurement_session_number:
+        session = instance.measurement_session_number
+        session.items_count = session.items.filter(is_active=True).count()
+        session.save(update_fields=['items_count'])
+
+@receiver(post_save, sender=MeasurementSession)
+def set_default_session_number(sender, instance, created, **kwargs):
+    """
+    تنظیم شماره صورت جلسه اگر ایجاد شده و شماره ندارد
+    """
+    if created and not instance.session_number:
+        last_session = MeasurementSession.objects.filter(
+            project=instance.project,
+            discipline_choice=instance.discipline_choice
+        ).exclude(pk=instance.pk).order_by('-created_at').first()
+        
+        if last_session and last_session.session_number:
+            try:
+                last_num = int(last_session.session_number.split('-')[-1])
+                new_num = last_num + 1
+            except (ValueError, AttributeError):
+                new_num = 1
+        else:
+            new_num = 1
+        
+        instance.session_number = f"{instance.get_discipline_choice_display()[:2]}-{new_num:04d}"
+        instance.save(update_fields=['session_number'])
 
 def get_changes(instance, previous_state):
     """
