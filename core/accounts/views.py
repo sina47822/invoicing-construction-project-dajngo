@@ -15,13 +15,13 @@ class RegisterView(View):
         if form.is_valid():
             form.save()
             messages.success(request, 'ثبت‌نام موفق! حالا وارد شوید.')
-            return redirect('login')
+            return redirect('accounts:login')
         return render(request, 'accounts/registration/register.html', {'form': form})
 
 def dashboard(request):
     # این می‌تونه صفحه اصلی بعد از ورود باشه. فعلاً ساده نگه می‌داریم، بعداً می‌تونی محتوا اضافه کنی
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect('accounts:login')
     return render(request, 'accounts/dashboard.html', {})  # template dashboard.html
 
 @login_required

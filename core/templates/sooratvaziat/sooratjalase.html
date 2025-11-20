@@ -1,0 +1,418 @@
+{% extends 'layout/base.html' %}
+{% load humanize %}
+
+{% block title %}صورت جلسه متره - {{ project.project_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xxl-10 col-xl-11 col-lg-12">
+            <!-- Header Section -->
+            <div class="header-section text-center mb-5">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="page-header-content bg-gradient-primary text-white rounded-3 p-5 shadow-lg">
+                                <h1 class="display-5 fw-bold mb-3">
+                                    <i class="fas fa-ruler-combined me-2"></i>
+                                    صورت جلسه متره
+                                </h1>
+                                <h2 class="h3 mb-2">{{ project.project_name }}</h2>
+                                <div class="d-flex justify-content-center gap-4 mt-3">
+                                    <span class="badge bg-light text-dark fs-6">
+                                        <i class="fas fa-hashtag me-1"></i>کد: {{ project.project_code }}
+                                    </span>
+                                    <span class="badge bg-light text-dark fs-6">
+                                        <i class="fas fa-calendar me-1"></i>سال: {{ project.execution_year }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons mb-5">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <a href="{% url 'sooratvaziat:session_list' project.pk %}" class="btn btn-outline-primary btn-lg px-4 py-2 rounded-pill shadow-sm hover-lift">
+                            <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست جلسات
+                        </a>
+                        <a href="{% url 'sooratvaziat:project_financial_report' project.pk %}" class="btn btn-primary btn-lg px-4 py-2 rounded-pill shadow-sm hover-lift">
+                            <i class="fas fa-chart-line me-2"></i>گزارش مالی
+                        </a>
+                    </div>
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle me-2"></i>
+                        تعداد: {{ sessions|length }} صورت جلسه فعال
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sessions Accordion -->
+            <div class="sessions-accordion">
+                {% for session_data in sessions %}
+                {% with session=session_data.instance %}
+                <div class="session-accordion-item mb-4">
+                    <div class="accordion-header bg-white rounded-3 p-4 shadow-sm">
+                        <button class="accordion-button collapsed w-100 text-start bg-transparent border-0 p-0" 
+                                type="button" 
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#session{{ session.id }}"
+                                aria-expanded="false">
+                            <div class="d-flex justify-content-between align-items-center w-100">
+                                <div class="session-title">
+                                    <h5 class="fw-bold text-primary mb-1">
+                                        <i class="fas fa-clipboard-check me-2"></i>
+                                        جلسه {{ session.session_number }}
+                                    </h5>
+                                    <div class="session-meta d-flex gap-3 flex-wrap">
+                                        <span class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {% if session.session_date %}
+                                                {{ session.session_date|date:"Y/m/d" }}
+                                            {% else %}
+                                                تاریخ نامشخص
+                                            {% endif %}
+                                        </span>
+                                        <span class="badge bg-info text-dark">
+                                            {{ session.get_discipline_choice_display|default:"نامشخص" }}
+                                        </span>
+                                        <span class="text-muted">
+                                            <i class="fas fa-cubes me-1"></i>
+                                            {{ session_data.groups|length }} گروه
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="accordion-icon">
+                                    <i class="fas fa-chevron-down transition-rotate"></i>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <div id="session{{ session.id }}" class="accordion-collapse collapse">
+                        <div class="accordion-body bg-light rounded-bottom-3 p-0">
+                            <!-- Groups for this session -->
+                            {% for group in session_data.groups %}
+                            <div class="group-section bg-white rounded m-4">
+                                <div class="group-header bg-gradient-secondary text-white rounded-top p-3">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class="fas fa-folder me-2"></i>
+                                        {% if group.grouper.row_number %}
+                                            {{ group.grouper.row_number }} - 
+                                        {% endif %}
+                                        {{ group.grouper.description|default:"گروه بدون عنوان" }}
+                                    </h6>
+                                </div>
+                                
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th width="10%" class="text-center">ردیف</th>
+                                                <th width="40%" class="text-center">شرح آیتم</th>
+                                                <th width="10%" class="text-center">طول</th>
+                                                <th width="10%" class="text-center">عرض</th>
+                                                <th width="10%" class="text-center">ارتفاع</th>
+                                                <th width="10%" class="text-center">تعداد</th>
+                                                <th width="10%" class="text-center">مبلغ (ریال)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in group.items %}
+                                            <tr>
+                                                <td class="text-center fw-bold text-primary">{{ forloop.counter }}</td>
+                                                <td class="text-start">
+                                                    {{ item.instance.row_description|default:item.instance.pricelist_item.description|default:"شرح نامشخص" }}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if item.instance.length %}
+                                                        {{ item.instance.length }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if item.instance.width %}
+                                                        {{ item.instance.width }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if item.instance.height %}
+                                                        {{ item.instance.height }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if item.instance.count %}
+                                                        {{ item.instance.count }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center fw-bold text-success">
+                                                    {{ item.item_amount|floatformat:0|intcomma }}
+                                                </td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted py-4">
+                                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                                    هیچ آیتمی در این گروه وجود ندارد
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            
+                                            <!-- Group Total -->
+                                            <tr class="group-total bg-dark text-white">
+                                                <td colspan="6" class="text-start fw-bold py-3">
+                                                    <i class="fas fa-calculator me-2"></i>
+                                                    جمع کل گروه
+                                                </td>
+                                                <td class="text-center fw-bold">
+                                                    {{ group.group_total|floatformat:0|intcomma }}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-exclamation-triangle me-2 fa-2x"></i>
+                                <h5 class="mt-2">هیچ گروهی برای این صورت جلسه وجود ندارد</h5>
+                            </div>
+                            {% endfor %}
+
+                            <!-- Session Actions -->
+                            <div class="session-actions bg-white rounded m-4 p-3 border">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                    <div class="session-total">
+                                        <span class="fw-bold text-primary">جمع کل صورت جلسه:</span>
+                                        <span class="h5 fw-bold text-success me-2">
+                                            <!-- Fixed: Calculate session total without map filter -->
+                                            {% with total=0 %}
+                                                {% for group in session_data.groups %}
+                                                    {% with group_total=group.group_total %}
+                                                        {% widthratio group_total 1 1 as group_total_num %}
+                                                        {{ total|add:group_total_num }}
+                                                    {% endwith %}
+                                                {% endfor %}
+                                                {{ total|floatformat:0|intcomma }}
+                                            {% endwith %}
+                                            ریال
+                                        </span>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'sooratvaziat:detailed_session' session.id %}" class="btn btn-primary btn-sm rounded-pill me-2">
+                                            <i class="fas fa-edit me-1"></i>ویرایش
+                                        </a>
+                                        <a href="?export=session_{{ session.id }}" class="btn btn-success btn-sm rounded-pill me-2">
+                                            <i class="fas fa-file-excel me-1"></i>خروجی Excel
+                                        </a>
+                                        <a href="javascript:window.print()" class="btn btn-secondary btn-sm rounded-pill">
+                                            <i class="fas fa-print me-1"></i>چاپ
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% empty %}
+                <div class="empty-state bg-white rounded-3 p-5 text-center shadow-sm">
+                    <i class="fas fa-ruler-combined fa-4x text-muted mb-4"></i>
+                    <h4 class="text-muted mb-3">هیچ صورت جلسه متره‌ای یافت نشد</h4>
+                    <p class="text-muted mb-4">برای ایجاد صورت جلسه جدید، از دکمه زیر استفاده کنید.</p>
+                    <a href="{% url 'sooratvaziat:detailed_session' project.pk %}?project_id={{ project.pk }}" class="btn btn-primary btn-lg px-4 py-2 rounded-pill">
+                        <i class="fas fa-plus-circle me-2"></i>ایجاد صورت جلسه جدید
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Final Grand Total -->
+            {% if sessions %}
+            <div class="grand-total-section mt-5">
+                <div class="grand-total-card bg-gradient-success text-white rounded-3 p-4 text-center shadow-lg">
+                    <h4 class="fw-bold mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        جمع کل تمام صورت جلسات
+                    </h4>
+                    <div class="total-amount display-4 fw-bold text-warning mb-2">
+                        <!-- Fixed: Calculate grand total without map filter -->
+                        {% with grand_total=0 %}
+                            {% for session_data in sessions %}
+                                {% for group in session_data.groups %}
+                                    {% with group_total=group.group_total %}
+                                        {{ grand_total|add:group_total }}
+                                    {% endwith %}
+                                {% endfor %}
+                            {% endfor %}
+                            {{ grand_total|floatformat:0|intcomma }}
+                        {% endwith %}
+                        ریال
+                    </div>
+                    <p class="mb-0 opacity-75">مبلغ کل برآورد شده در تمام صورت جلسات</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Footer -->
+            <div class="text-center text-muted mt-5 pt-4 border-top">
+                <p class="small mb-0">
+                    <i class="fas fa-clock me-1"></i>
+                    تاریخ تولید گزارش: {% now "Y/m/d H:i" %}
+                    |
+                    <i class="fas fa-user me-1"></i>
+                    کاربر: {{ request.user.get_full_name|default:request.user.username }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.session-accordion-item {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.accordion-header {
+    transition: all 0.3s ease;
+}
+
+.accordion-header:hover {
+    background-color: #f8f9fa !important;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.accordion-button::after {
+    display: none;
+}
+
+.transition-rotate {
+    transition: transform 0.3s ease;
+}
+
+.accordion-button:not(.collapsed) .transition-rotate {
+    transform: rotate(180deg);
+}
+
+.group-section {
+    border: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.group-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%) !important;
+}
+
+.group-total {
+    background-color: #2c3e50 !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
+}
+
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+}
+
+.session-meta .badge {
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .session-title h5 {
+        font-size: 1.1rem;
+    }
+    
+    .session-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem !important;
+    }
+    
+    .action-buttons .btn {
+        margin-bottom: 0.5rem;
+    }
+    
+    .grand-total-card .display-4 {
+        font-size: 2rem;
+    }
+}
+
+@media print {
+    .action-buttons, .accordion-icon {
+        display: none !important;
+    }
+    
+    .accordion-collapse {
+        display: block !important;
+    }
+    
+    .session-accordion-item {
+        break-inside: avoid;
+        margin-bottom: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Accordion functionality
+    const accordionButtons = document.querySelectorAll('.accordion-button');
+    accordionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const icon = this.querySelector('.transition-rotate');
+            if (icon) {
+                icon.style.transition = 'transform 0.3s ease';
+            }
+        });
+    });
+
+    // Print functionality
+    const printButtons = document.querySelectorAll('a[href="javascript:window.print()"]');
+    printButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            window.print();
+        });
+    });
+
+    // Export confirmation
+    const exportLinks = document.querySelectorAll('a[href*="export="]');
+    exportLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (!confirm('آیا مایل به دریافت خروجی Excel هستید؟')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

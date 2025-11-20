@@ -1,174 +1,32 @@
-<!-- sooratvaziat\templates\detailed_session.html -->
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>جزئیات صورت جلسه - {{ session.session_number }}</title>
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% extends 'layout/base.html' %}
+{% load humanize %}
 
-    <style>
-        body {
-            font-family: 'Tahoma', 'Arial', sans-serif;
-            direction: rtl;
-            background-color: #ffffff;
-            line-height: 1.6;
-        }
-        .header-section {
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            color: white;
-            padding: 2rem 0;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-        }
-        .session-info {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-            border-right: 5px solid #3498db;
-        }
-        .project-info {
-            background: linear-gradient(135deg, #8e44ad, #9b59b6);
-            color: white;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .form-control {
-            border-radius: 8px;
-            padding: 8px 12px;
-        }
-        .table th {
-            background-color: #3498db;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            vertical-align: middle;
-        }
-        .table td {
-            text-align: center;
-            vertical-align: middle;
-        }
-        .btn-action {
-            border-radius: 25px;
-            padding: 8px 20px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .delete-btn {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            transition: all 0.3s ease;
-        }
-        .delete-btn:hover {
-            background-color: #c0392b;
-            transform: translateY(-1px);
-        }
-        [id^="id_items-"][id$="-DELETE"] {
-            display: none;
-        }
-        .hidden-input {
-            display: none;
-        }
-        .total-section {
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
-            color: white;
-            padding: 1rem;
-            border-radius: 10px;
-            margin: 1rem 0;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .action-buttons {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .empty-row-message {
-            text-align: center;
-            padding: 2rem;
-            color: #6c757d;
-            font-style: italic;
-        }
-        .action-cell {
-            min-width: 120px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container py-4">
-        <!-- Header Section -->
-        <div class="header-section text-center">
-            <h1 class="display-6 fw-bold mb-3">
-                <i class="fas fa-clipboard-list me-2"></i>
-                جزئیات صورت‌جلسه
-            </h1>
-            <p class="lead mb-0">شماره صورت‌جلسه: {{ session.session_number }}</p>
-        </div>
+{% block title %}ویرایش صورت جلسه - {{ project.project_name }}{% endblock %}
 
-        <!-- Project Information -->
-        {% if project %}
-        <div class="project-info">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="mb-2">
-                        <i class="fas fa-project-diagram me-2"></i>
-                        {{ project.project_name }}
-                    </h5>
-                    <p class="mb-1"><strong>کد پروژه:</strong> {{ project.project_code }}</p>
-                    <p class="mb-1"><strong>سال اجرا:</strong> {{ project.execution_year }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="mb-1"><strong>کارفرما:</strong> {{ project.employer|default:"-" }}</p>
-                    <p class="mb-1"><strong>پیمانکار:</strong> {{ project.contractor|default:"-" }}</p>
-                    <p class="mb-0"><strong>محل پروژه:</strong> {{ project.city|default:"-" }} - {{ project.province|default:"-" }}</p>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Session Information -->
-        <div class="session-info">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        اطلاعات صورت جلسه
-                    </h5>
-                    <form method="post" id="item-form">
-                        {% csrf_token %}
-                        {{ session_form.media }}
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="id_session_date" class="form-label">تاریخ صورت جلسه:</label>
-                                    {{ session_form.session_date }}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="id_discipline_choice" class="form-label">رشته:</label>
-                                    {{ session_form.discipline_choice }}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xxl-10 col-xl-11 col-lg-12">
+            <!-- Header Section -->
+            <div class="header-section text-center mb-5">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="page-header-content bg-gradient-primary text-white rounded-3 p-5 shadow-lg">
+                                <h1 class="display-5 fw-bold mb-3">
+                                    <i class="fas fa-edit me-2"></i>
+                                    {% if session %}ویرایش{% else %}ایجاد{% endif %} صورت جلسه
+                                </h1>
+                                <h2 class="h3 mb-2">{{ project.project_name }}</h2>
+                                <div class="d-flex justify-content-center gap-4 mt-3">
+                                    <span class="badge bg-light text-dark fs-6">
+                                        <i class="fas fa-hashtag me-1"></i>کد: {{ project.project_code }}
+                                    </span>
+                                    {% if session %}
+                                    <span class="badge bg-light text-dark fs-6">
+                                        جلسه: {{ session.session_number }}
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -176,242 +34,375 @@
                 </div>
             </div>
 
-            <!-- Total Quantity -->
-            <div class="total-section">
-                <h4 class="mb-0">
-                    <i class="fas fa-calculator me-2"></i>
-                    مجموع کل: {{ total_quantity }}
-                </h4>
-            </div>
+            <!-- Main Form -->
+            <div class="main-form-section">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Session Information Card -->
+                    <div class="card bg-white rounded-3 shadow-sm mb-4">
+                        <div class="card-header bg-gradient-secondary text-white rounded-top-3 py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                اطلاعات صورت جلسه
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <!-- Session Date -->
+                                <div class="col-md-6">
+                                    <label for="{{ session_form.session_date.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-calendar me-2 text-primary"></i>تاریخ جلسه
+                                    </label>
+                                    {{ session_form.session_date }}
+                                    {% if session_form.session_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ session_form.session_date.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
 
-            <!-- Items Table -->
-            <div class="table-responsive">
-                <table class="table table-striped table-hover" id="item-table">
-                    <thead>
-                        <tr>
-                            <th width="15%">آیتم فهرست‌بها</th>
-                            <th width="20%">توضیح ردیف</th>
-                            <th width="10%">طول</th>
-                            <th width="10%">عرض</th>
-                            <th width="10%">ارتفاع</th>
-                            <th width="10%">وزن</th>
-                            <th width="10%">تعداد</th>
-                            <th width="15%">عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{ formset.management_form }}
-                        {% for form in formset %}
-                        <tr class="item-row">
-                            <td>{{ form.pricelist_item }}</td>
-                            <td>{{ form.row_description }}</td>
-                            <td>{{ form.length }}</td>
-                            <td>{{ form.width }}</td>
-                            <td>{{ form.height }}</td>
-                            <td>{{ form.weight }}</td>
-                            <td>{{ form.count }}</td>
-                            <td class="action-cell">
-                                <div class="d-flex flex-column align-items-center gap-2">
-                                    <button type="button" class="btn delete-btn w-100">
-                                        <i class="fas fa-trash ms-1"></i>حذف
-                                    </button>
-                                    <div class="hidden-inputs">
-                                        {{ form.id }}
-                                        {{ form.DELETE }}
+                                <!-- Discipline Choice -->
+                                <div class="col-md-6">
+                                    <label for="{{ session_form.discipline_choice.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-shapes me-2 text-primary"></i>رشته
+                                    </label>
+                                    {{ session_form.discipline_choice }}
+                                    {% if session_form.discipline_choice.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ session_form.discipline_choice.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Session Number (if exists) -->
+                                {% if session %}
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>شماره جلسه:</strong> {{ session.session_number }}
+                                        <span class="me-3">|</span>
+                                        <strong>تاریخ ایجاد:</strong> {{ session.created_at|date:"Y/m/d H:i" }}
                                     </div>
                                 </div>
-                                {% if form.errors %}
-                                <div class="text-danger small mt-2">
-                                    {% for error in form.errors %}
-                                        {{ error }}
-                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items Formset -->
+                    <div class="card bg-white rounded-3 shadow-sm mb-4">
+                        <div class="card-header bg-gradient-info text-white rounded-top-3 py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-cubes me-2"></i>
+                                آیتم‌های متره
+                            </h5>
+                            <span class="badge bg-light text-dark fs-6">
+                                تعداد: {{ formset.total_form_count }} آیتم
+                            </span>
+                        </div>
+                        <div class="card-body p-4">
+                            {{ formset.management_form }}
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle" id="items-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="5%">#</th>
+                                            <th width="20%">آیتم فهرست بها</th>
+                                            <th width="25%">شرح ردیف</th>
+                                            <th width="8%">طول</th>
+                                            <th width="8%">عرض</th>
+                                            <th width="8%">ارتفاع</th>
+                                            <th width="8%">وزن</th>
+                                            <th width="8%">تعداد</th>
+                                            <th width="10%">عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for form in formset %}
+                                        <tr class="item-row {% if form.DELETE.value %}d-none{% endif %}">
+                                            <td class="text-center fw-bold text-primary">{{ forloop.counter }}</td>
+                                            <td>
+                                                {{ form.id }}
+                                                {{ form.pricelist_item }}
+                                                {% if form.pricelist_item.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.pricelist_item.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ form.row_description }}
+                                                {% if form.row_description.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.row_description.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ form.length }}
+                                                {% if form.length.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.length.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ form.width }}
+                                                {% if form.width.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.width.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ form.height }}
+                                                {% if form.height.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.height.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ form.weight }}
+                                                {% if form.weight.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.weight.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{ form.count }}
+                                                {% if form.count.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.count.errors }}
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if form.instance.pk %}
+                                                <div class="form-check form-switch">
+                                                    {{ form.DELETE }}
+                                                    <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                        حذف
+                                                    </label>
+                                                </div>
+                                                {% else %}
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-row">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Add Row Button -->
+                            <div class="text-center mt-4">
+                                <button type="button" class="btn btn-success rounded-pill" id="add-row">
+                                    <i class="fas fa-plus-circle me-2"></i>افزودن ردیف جدید
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total and Actions -->
+                    <div class="action-section bg-white rounded-3 p-4 shadow-sm">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                {% if total_quantity %}
+                                <div class="total-display">
+                                    <h5 class="text-primary mb-2">
+                                        <i class="fas fa-calculator me-2"></i>جمع کل این جلسه:
+                                    </h5>
+                                    <div class="total-amount display-6 fw-bold text-success">
+                                        {{ total_quantity|floatformat:0|intcomma }} ریال
+                                    </div>
                                 </div>
                                 {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" class="empty-row-message">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                هیچ آیتمی برای این صورت جلسه ثبت نشده است.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        
-                        <!-- Empty Row Template -->
-                        <tr id="empty-row" class="item-row" style="display:none;">
-                            <td>{{ formset.empty_form.pricelist_item }}</td>
-                            <td>{{ formset.empty_form.row_description }}</td>
-                            <td>{{ formset.empty_form.length }}</td>
-                            <td>{{ formset.empty_form.width }}</td>
-                            <td>{{ formset.empty_form.height }}</td>
-                            <td>{{ formset.empty_form.weight }}</td>
-                            <td>{{ formset.empty_form.count }}</td>
-                            <td style="background-color: white;">
-                                <button type="button" class="btn delete-row">
-                                    <i class="fas fa-trash me-1"></i>حذف
-                                </button>
-                                {{ formset.empty_form.id }} 
-                                {{ formset.empty_form.DELETE }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <div class="row">
-                    <div class="col-md-6">
-                        <button type="button" class="btn btn-success btn-action w-100" id="add-row">
-                            <i class="fas fa-plus-circle me-2"></i>افزودن ردیف جدید
-                        </button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex justify-content-end gap-3 flex-wrap">
+                                    <a href="{% url 'sooratvaziat:session_list' project.pk %}" class="btn btn-outline-secondary btn-lg px-4 py-2 rounded-pill">
+                                        <i class="fas fa-times me-2"></i>انصراف
+                                    </a>
+                                    <button type="submit" class="btn btn-primary btn-lg px-4 py-2 rounded-pill">
+                                        <i class="fas fa-save me-2"></i>ذخیره صورت جلسه
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <button type="submit" class="btn btn-primary btn-action w-100">
-                            <i class="fas fa-save me-2"></i>ذخیره تغییرات
-                        </button>
-                    </div>
-                </div>
+                </form>
             </div>
-        </form>
 
-        <!-- Navigation Buttons -->
-        <div class="row mt-4">
-            <div class="col-md-4">
-                {% if project %}
-                <a href="{% url 'sooratvaziat:session_list' project.id %}" class="btn btn-secondary btn-action w-100">
-                    <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
-                </a>
-                {% else %}
-                <a href="{% url 'sooratvaziat:project_financial_report_list' %}" class="btn btn-secondary btn-action w-100">
-                    <i class="fas fa-arrow-right me-2"></i>بازگشت به پروژه‌ها
-                </a>
-                {% endif %}
+            <!-- Footer -->
+            <div class="text-center text-muted mt-5 pt-4 border-top">
+                <p class="small mb-0">
+                    <i class="fas fa-clock me-1"></i>
+                    آخرین به روزرسانی: {% now "Y/m/d H:i" %}
+                </p>
             </div>
-            <div class="col-md-4">
-                {% if project %}
-                <a href="{% url 'riz_metre_discipline_list' project.id %}" class="btn btn-info btn-action w-100">
-                    <i class="fas fa-ruler-combined me-2"></i>ریز متره
-                </a>
-                {% endif %}
-            </div>
-            <div class="col-md-4">
-                {% if project %}
-                <a href="{% url 'riz_financial_discipline_list' project.id %}" class="btn btn-warning btn-action w-100">
-                    <i class="fas fa-calculator me-2"></i>ریز مالی
-                </a>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="text-center text-muted mt-5 pt-3">
-            <p class="small">
-                <i class="fas fa-clock me-1"></i>
-                تاریخ امروز: {% now "Y/m/d" %}
-                {% if project %}
-                | 
-                <i class="fas fa-project-diagram me-1"></i>
-                پروژه: {{ project.project_name }}
-                {% endif %}
-            </p>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_css %}
+<style>
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+}
 
-    <script>
-        // ---------- Formset JS ----------
-        document.addEventListener('DOMContentLoaded', function() {
-            const tableBody = document.querySelector('#item-table tbody');
-            const emptyRow = document.querySelector('#empty-row');
-            const addButton = document.querySelector('#add-row');
-            const prefix = '{{ formset.prefix }}';
+.form-control:focus, .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
 
-            function updateFormIndexes() {
-                const rows = tableBody.querySelectorAll('.item-row:not(#empty-row)');
-                rows.forEach((row, index) => {
-                    row.querySelectorAll('input, select, textarea').forEach(input => {
-                        if (input.name) {
-                            input.name = input.name.replace(new RegExp(`${prefix}-\\d+-`), `${prefix}-${index}-`);
-                        }
-                        if (input.id) {
-                            input.id = input.id.replace(new RegExp(`${prefix}-\\d+-`), `${prefix}-${index}-`);
-                        }
-                    });
-                });
-                document.querySelector(`[name="${prefix}-TOTAL_FORMS"]`).value = rows.length;
-            }
+.card-header {
+    border: none;
+}
 
-            addButton.addEventListener('click', function() {
-                const totalForms = parseInt(document.querySelector(`[name="${prefix}-TOTAL_FORMS"]`).value);
-                const newRow = emptyRow.cloneNode(true);
-                newRow.style.display = '';
-                newRow.innerHTML = newRow.innerHTML.replace(/__prefix__/g, totalForms);
-                tableBody.insertBefore(newRow, emptyRow);
-                
-                // Add Bootstrap classes to new form elements
-                newRow.querySelectorAll('input, select, textarea').forEach(element => {
-                    element.classList.add('form-control');
-                });
-                
-                updateFormIndexes();
-            });
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
 
-            tableBody.addEventListener('click', function(event) {
-                if (event.target.classList.contains('delete-row') || 
-                    event.target.closest('.delete-row')) {
-                    const deleteBtn = event.target.classList.contains('delete-row') ? 
-                        event.target : event.target.closest('.delete-row');
-                    const row = deleteBtn.closest('.item-row');
-                    const deleteInput = row.querySelector('input[name$="-DELETE"]');
-                    const idInput = row.querySelector('input[name$="-id"]');
-                    
-                    if (idInput && idInput.value) {
-                        deleteInput.checked = true;
-                        row.style.display = 'none';
-                    } else {
-                        row.remove();
-                    }
-                    updateFormIndexes();
-                }
-            });
+.bg-gradient-secondary {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%) !important;
+}
 
-            // Initialize form controls with Bootstrap classes
-            document.querySelectorAll('#item-table input, #item-table select, #item-table textarea').forEach(element => {
-                element.classList.add('form-control');
-            });
+.bg-gradient-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%) !important;
+}
 
-            // Add loading animation to submit button
-            const submitButton = document.querySelector('button[type="submit"]');
-            if (submitButton) {
-                submitButton.addEventListener('click', function() {
-                    const originalText = this.innerHTML;
-                    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال ذخیره...';
-                    this.disabled = true;
-                    
-                    setTimeout(() => {
-                        this.innerHTML = originalText;
-                        this.disabled = false;
-                    }, 3000);
-                });
-            }
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.item-row td {
+    vertical-align: middle;
+}
+
+.remove-row {
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.total-amount {
+    color: #28a745 !important;
+}
+
+.invalid-feedback {
+    font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .display-6 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add new row functionality
+    const addRowButton = document.getElementById('add-row');
+    const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+    const tableBody = document.querySelector('#items-table tbody');
+    
+    addRowButton.addEventListener('click', function() {
+        const formCount = parseInt(totalForms.value);
+        const newRow = document.createElement('tr');
+        newRow.className = 'item-row';
+        newRow.innerHTML = `
+            <td class="text-center fw-bold text-primary">${formCount + 1}</td>
+            <td>
+                <select name="items-${formCount}-pricelist_item" class="form-select" id="id_items-${formCount}-pricelist_item">
+                    <option value="">انتخاب آیتم</option>
+                    <!-- Options would be populated dynamically -->
+                </select>
+            </td>
+            <td>
+                <input type="text" name="items-${formCount}-row_description" class="form-control" id="id_items-${formCount}-row_description">
+            </td>
+            <td>
+                <input type="number" name="items-${formCount}-length" class="form-control" id="id_items-${formCount}-length" step="0.01">
+            </td>
+            <td>
+                <input type="number" name="items-${formCount}-width" class="form-control" id="id_items-${formCount}-width" step="0.01">
+            </td>
+            <td>
+                <input type="number" name="items-${formCount}-height" class="form-control" id="id_items-${formCount}-height" step="0.01">
+            </td>
+            <td>
+                <input type="number" name="items-${formCount}-weight" class="form-control" id="id_items-${formCount}-weight" step="0.01">
+            </td>
+            <td>
+                <input type="number" name="items-${formCount}-count" class="form-control" id="id_items-${formCount}-count" step="1" value="1">
+            </td>
+            <td>
+                <button type="button" class="btn btn-outline-danger btn-sm remove-row">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(newRow);
+        totalForms.value = formCount + 1;
+        
+        // Add event listener to new remove button
+        newRow.querySelector('.remove-row').addEventListener('click', function() {
+            newRow.remove();
         });
+    });
 
-        // ---------- Datepicker (if needed) ----------
-        $(function () {
-            // If you're using Persian Datepicker, initialize it here
-            if (typeof $.fn.persianDatepicker !== 'undefined') {
-                $(".persian-datepicker").persianDatepicker({
-                    format: 'YYYY/MM/DD',
-                    timePicker: { enabled: true },
-                    initialValueType: 'gregorian',
-                    autoClose: true
-                });
-            }
+    // Remove row functionality
+    document.querySelectorAll('.remove-row').forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('tr').remove();
         });
-    </script>
-</body>
-</html>
+    });
+
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    // Auto-calculate functionality (can be enhanced)
+    const quantityInputs = document.querySelectorAll('input[name*="count"], input[name*="length"], input[name*="width"], input[name*="height"]');
+    quantityInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Add auto-calculation logic here if needed
+        });
+    });
+});
+</script>
+{% endblock %}

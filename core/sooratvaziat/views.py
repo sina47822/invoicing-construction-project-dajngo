@@ -13,7 +13,7 @@ from django.contrib import messages
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from collections import OrderedDict
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Prefetch, Sum, Count
+from django.db.models import Prefetch, Sum, Count, Q
 from django.db import transaction
 from django.http import HttpResponse
 import csv
@@ -153,10 +153,14 @@ def format_number_decimal(value, places=2):
         return "۰.۰۰"
 
 @login_required
-def riz_metre_financial(request, project_id, discipline_choice=None):
+def riz_metre_financial(request, pk, discipline_choice=None):
     # فقط پروژه‌های کاربر جاری
-    projects = Project.objects.filter(user=request.user)
-    project = get_object_or_404(projects, id=project_id)
+    project = get_object_or_404(
+        Project, 
+        pk=pk, 
+        user=request.user, 
+        is_active=True
+    )
     
     # فیلتر کردن بر اساس پروژه و فهرست بها (اگر مشخص شده باشد)
     qs = MeasurementSessionItem.objects.filter(
@@ -340,9 +344,13 @@ def riz_metre_financial(request, project_id, discipline_choice=None):
     return render(request, 'sooratvaziat/soorat_mali.html', context)
 
 @login_required
-def riz_financial_discipline_list(request, project_id):
-    projects = Project.objects.filter(user=request.user)
-    project = get_object_or_404(projects, id=project_id)
+def riz_financial_discipline_list(request, pk):
+    project = get_object_or_404(
+        Project, 
+        pk=pk, 
+        user=request.user, 
+        is_active=True
+    )
     
     # استخراج رشته‌های منحصر به فرد از آیتم‌های موجود برای پروژه
     disciplines = MeasurementSessionItem.objects.filter(
@@ -395,9 +403,14 @@ def riz_financial_discipline_list(request, project_id):
     return render(request, 'sooratvaziat/riz_financial_discipline_list.html', context)
 
 @login_required
-def riz_metre_discipline_list(request, project_id):
-    projects = Project.objects.filter(user=request.user)
-    project = get_object_or_404(projects, id=project_id)
+def riz_metre_discipline_list(request, pk):
+   
+    project = get_object_or_404(
+        Project, 
+        pk=pk, 
+        user=request.user, 
+        is_active=True
+    )
     
     # استخراج رشته‌های منحصر به فرد از آیتم‌های موجود برای پروژه
     disciplines = MeasurementSessionItem.objects.filter(
@@ -429,9 +442,13 @@ def riz_metre_discipline_list(request, project_id):
     return render(request, 'sooratvaziat/riz_metre_discipline_list.html', context)
 
 @login_required
-def riz_metre(request, project_id, discipline_choice=None):
-    projects = Project.objects.filter(user=request.user)
-    project = get_object_or_404(projects, id=project_id)
+def riz_metre(request, pk, discipline_choice=None):
+    project = get_object_or_404(
+        Project, 
+        pk=pk, 
+        user=request.user, 
+        is_active=True
+    )
     
     # اگر discipline_choice داده شده، فیلتر اعمال شود
     qs = MeasurementSessionItem.objects.filter(
@@ -497,197 +514,284 @@ def riz_metre(request, project_id, discipline_choice=None):
     return render(request, 'sooratvaziat/riz_metre.html', context)
     
 @login_required
-def MeasurementSessionView(request, project_id):
+def session_list(request, pk):
     """
-    Renders sooratvaziat page with precomputed item_amounts and group totals.
+    لیست صورت جلسات یک پروژه
     """
     # فقط پروژه‌های کاربر جاری
-    projects = Project.objects.filter(user=request.user)
-    project = get_object_or_404(projects, id=project_id)
-    
-    month = request.GET.get('month')  # optional month filter (1-12) — currently not used; add filter if needed
-    # Prefetch items ordered by pricelist_item.row_number
-    # فیلتر کردن بر اساس پروژه
-    item_queryset = MeasurementSessionItem.objects.filter(
-        measurement_session_number__project=project
-    ).order_by('pricelist_item__row_number')
-
-    sessions_qs = MeasurementSession.objects.filter(
-        project=project
-    ).prefetch_related(
-        Prefetch('items', queryset=item_queryset)
-    ).all().order_by('-created_at')  # newest first
-
-    sessions_data = []
-    for session in sessions_qs:
-        # Build groups ordered by pricelist_item.row_number using OrderedDict
-        groups = OrderedDict()
-        # session.items is the related manager; Prefetch ensures it's available without extra queries
-        for item in session.items.all():
-            grouper = getattr(item, 'pricelist_item', None)
-            # Use a key that preserves row_number order; fallback to repr if row_number missing
-            key = getattr(grouper, 'row_number', None) or id(grouper)
-
-            if key not in groups:
-                groups[key] = {
-                    'grouper': grouper,
-                    'items': [],
-                    'group_total': Decimal('0.00')
-                }
-            # Determine amount for this item. Some code uses a property/method: handle both
-            raw_amount = getattr(item, 'get_total_item_amount', None)
-            if callable(raw_amount):
-                raw_amount = raw_amount()
-            elif raw_amount is None:
-                # maybe item has a field named 'total' or compute from count*unit_price etc.
-                raw_amount = getattr(item, 'total', 0)
-
-            item_amount = _to_decimal(raw_amount, places=2)
-            groups[key]['items'].append({
-                'instance': item,
-                'item_amount': item_amount,
-            })
-            groups[key]['group_total'] += item_amount
-
-        # Quantize group totals to 2 decimals
-        for g in groups.values():
-            g['group_total'] = g['group_total'].quantize(Decimal('1.00'), rounding=ROUND_HALF_UP)
-
-        sessions_data.append({
-            'instance': session,
-            'groups': list(groups.values()),
-        })
-
-    context = {
-        # pass the precomputed presentation data as `sessions` to minimize template changes
-        'sessions': sessions_data,
-        'project': project,
-    }
-    return render(request, 'sooratvaziat/soorahjalase.html', context)
-
-@login_required
-def session_list(request, project_id):
-    # فقط پروژه‌های کاربر جاری
-    projects = Project.objects.filter(user=request.user)
-    project = get_object_or_404(projects, id=project_id)
-    
-    # فقط صورت جلسات مربوط به این پروژه
-    sessions = (
-        MeasurementSession.objects
-        .filter(project=project)
-        .annotate(item_count=Count('items'))
-        .order_by('-created_at', '-id')
+    project = get_object_or_404(
+        Project, 
+        pk=pk, 
+        user=request.user, 
+        is_active=True
     )
     
-    # تبدیل تاریخ‌ها به جلالی و افزودن خاصیت به آبجکت‌ها تا قالب ساده باشد
-    for s in sessions:
-        s.session_date_jalali = gregorian_to_jalali(s.session_date, "%Y/%m/%d")  # یا هر فرمت دلخواه
+    try:
+        # فقط صورت جلسات مربوط به این پروژه
+        sessions = (
+            MeasurementSession.objects
+            .filter(project=project, is_active=True)
+            .select_related('created_by')
+            .prefetch_related('items')
+            .annotate(item_count=Count('items'))
+            .order_by('-session_date', '-created_at')
+        )
+        
+        # تبدیل تاریخ‌ها به جلالی
+        for session in sessions:
+            try:
+                if session.session_date:
+                    session.session_date_jalali = datetime2jalali(session.session_date).strftime("%Y/%m/%d")
+                else:
+                    session.session_date_jalali = "تاریخ نامشخص"
+            except Exception as e:
+                session.session_date_jalali = "خطا در تاریخ"
+                
+    except Exception as e:
+        messages.error(request, f"خطا در بارگذاری صورت جلسات: {str(e)}")
+        sessions = []
 
     context = {
         'title': f'لیست صورت‌جلسات - {project.project_name}',
         'sessions': sessions,
-        'project': project,  # اضافه کردن پروژه به context
+        'project': project,
     }
     return render(request, 'sooratvaziat/session_list.html', context)
 
 @login_required
+def MeasurementSessionView(request, pk):
+    """
+    نمایش صورت جلسه با گروه‌بندی آیتم‌ها
+    """
+    project = get_object_or_404(
+        Project, 
+        pk=pk, 
+        user=request.user, 
+        is_active=True
+    )
+    
+    try:
+        # پیش‌فرض کردن آیتم‌ها
+        item_queryset = MeasurementSessionItem.objects.filter(
+            measurement_session_number__project=project,
+            is_active=True
+        ).select_related('pricelist_item').order_by('pricelist_item__row_number')
+
+        sessions_qs = MeasurementSession.objects.filter(
+            project=project,
+            is_active=True
+        ).prefetch_related(
+            Prefetch('items', queryset=item_queryset)
+        ).select_related('created_by').order_by('-session_date', '-created_at')
+
+        sessions_data = []
+        for session in sessions_qs:
+            # ساخت گروه‌ها به صورت مرتب
+            groups = OrderedDict()
+            
+            for item in session.items.all():
+                pricelist_item = getattr(item, 'pricelist_item', None)
+                if pricelist_item:
+                    # استفاده از شماره ردیف برای گروه‌بندی
+                    key = getattr(pricelist_item, 'row_number', None) or id(pricelist_item)
+                    
+                    if key not in groups:
+                        groups[key] = {
+                            'grouper': pricelist_item,
+                            'items': [],
+                            'group_total': Decimal('0.00')
+                        }
+                    
+                    # محاسبه مبلغ آیتم
+                    try:
+                        item_amount = item.get_total_item_amount()
+                        if not isinstance(item_amount, Decimal):
+                            item_amount = Decimal(str(item_amount))
+                        item_amount = item_amount.quantize(Decimal('1.00'), rounding=ROUND_HALF_UP)
+                    except (ValueError, TypeError):
+                        item_amount = Decimal('0.00')
+                    
+                    groups[key]['items'].append({
+                        'instance': item,
+                        'item_amount': item_amount,
+                    })
+                    groups[key]['group_total'] += item_amount
+
+            # کمی کردن مجموع گروه‌ها
+            for group in groups.values():
+                group['group_total'] = group['group_total'].quantize(Decimal('1.00'), rounding=ROUND_HALF_UP)
+                group['formatted_total'] = f"{group['group_total']:,.0f}"
+
+            sessions_data.append({
+                'instance': session,
+                'groups': list(groups.values()),
+                'session_total': sum(group['group_total'] for group in groups.values())
+            })
+
+    except Exception as e:
+        messages.error(request, f"خطا در بارگذاری داده‌ها: {str(e)}")
+        sessions_data = []
+
+    context = {
+        'sessions': sessions_data,
+        'project': project,
+    }
+    return render(request, 'sooratvaziat/sooratjalase.html', context)
+
+@login_required
 def detailed_session(request, session_id):
     """
-    صفحه دیتیل صورت جلسه برای یک MeasurementSession خاص.
-    اجازه ویرایش، اضافه و حذف آیتم‌ها (MeasurementSessionItemها) را می‌دهد.
-    با استفاده از django-jalali-date، تبدیل تاریخ اتوماتیک انجام می‌شه.
+    صفحه ویرایش صورت جلسه
     """
-    # اطمینان از اینکه کاربر به این صورت جلسه دسترسی دارد
-    session = get_object_or_404(
-        MeasurementSession, 
-        id=session_id, 
-        project__user=request.user  # فقط صورت جلسات پروژه‌های کاربر
-    )
-    
-    # ساخت فرم مدل برای session
-    SessionModelForm = modelform_factory(
-        MeasurementSession,
-        fields=['session_date', 'discipline_choice'],
-        widgets={
-            'discipline_choice': Select(attrs={  # تغییر به Select برای انتخاب بهتر
-                'class': 'form-control',
-                'style': 'width: 180px;'
-            })
-        }
-    )
-    
-    # حالا از فرم ساخته‌شده استفاده کن (POST یا GET)
-    if request.method == 'POST':
-        session_form = SessionModelForm(request.POST, instance=session)
-    else:
-        session_form = SessionModelForm(instance=session)
-    
-    # override فیلد session_date به جلالی (بدون نیاز به تبدیل دستی)
-    session_form.fields['session_date'] = JalaliDateField(
-        widget=AdminJalaliDateWidget(attrs={
-            'class': 'form-control',  # کلاس برای استایل
-            'autocomplete': 'off',
-            'placeholder': 'انتخاب تاریخ'
-        }),
-        initial=session.session_date if session.session_date else None
-    )
-    
-    # تعریف فرم برای آیتم‌ها (DELETE را hidden می‌کنیم)
-    ItemForm = modelform_factory(
-        MeasurementSessionItem,
-        fields=('pricelist_item', 'row_description', 'length', 'width', 'height', 'weight', 'count'),
-        widgets={'DELETE': HiddenInput()}
-    )
-    
-    # استفاده از inlineformset_factory
-    SessionItemFormSet = inlineformset_factory(
-        MeasurementSession,
-        MeasurementSessionItem,
-        form=ItemForm,
-        extra=1,
-        can_delete=True,
-        fk_name='measurement_session_number',
-    )
-    
-    if request.method == 'POST':
-        formset = SessionItemFormSet(request.POST, instance=session)
-        with transaction.atomic():
-            if session_form.is_valid() and formset.is_valid():
-                # ذخیره session (تاریخ جلالی اتوماتیک تبدیل می‌شه)
-                session = session_form.save(commit=False)
-                session.modified_by = request.user
-                session.save()
-                instances = formset.save(commit=False)
-                for instance in instances:
-                    instance.modified_by = request.user
-                    if not instance.measurement_session_number_id:
-                        instance.measurement_session_number = session
-                    instance.save()
-                formset.save_m2m()
-                for obj in formset.deleted_objects:
-                    obj.modified_by = request.user
-                    obj.is_active = False
-                    obj.save()
-                return redirect('session_list', project_id=session.project.id)  # تغییر redirect
-            else:
-                # برای دیباگ
-                print("Session form errors:", session_form.errors)
-                print("Formset errors:", formset.errors)
-    else:
-        formset = SessionItemFormSet(instance=session)
-    
-    # محاسبه مجموع کل برای نمایش (اختیاری)
-    queryset = MeasurementSessionItem.objects.filter(measurement_session_number=session)
-    total_quantity = sum(item.get_total_item_amount() for item in queryset)
-    
+    try:
+        if session_id == 'new':
+            # ایجاد صورت جلسه جدید
+            session = None
+            project_id = request.GET.get('project_id')
+            if not project_id:
+                messages.error(request, "پروژه مشخص نشده است")
+                return redirect('sooratvaziat:project_list')
+            
+            project = get_object_or_404(Project, pk=project_id, user=request.user)
+        else:
+            # ویرایش صورت جلسه موجود
+            session = get_object_or_404(
+                MeasurementSession, 
+                id=session_id, 
+                project__user=request.user
+            )
+            project = session.project
+
+        # فرم صورت جلسه
+        SessionModelForm = modelform_factory(
+            MeasurementSession,
+            fields=['session_number', 'session_date', 'discipline_choice', 'description', 'notes'],
+            widgets={
+                'discipline_choice': Select(attrs={'class': 'form-control'}),
+                'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+                'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            }
+        )
+
+        if request.method == 'POST':
+            session_form = SessionModelForm(request.POST, instance=session)
+            
+            # فرم‌ست آیتم‌ها
+            ItemForm = modelform_factory(
+                MeasurementSessionItem,
+                fields=('pricelist_item', 'row_description', 'length', 'width', 'height', 'weight', 'count'),
+                widgets={
+                    'DELETE': HiddenInput(),
+                    'row_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+                }
+            )
+            
+            SessionItemFormSet = inlineformset_factory(
+                MeasurementSession,
+                MeasurementSessionItem,
+                form=ItemForm,
+                extra=1,
+                can_delete=True,
+                fk_name='measurement_session_number',
+            )
+            
+            formset = SessionItemFormSet(request.POST, instance=session)
+            
+            with transaction.atomic():
+                if session_form.is_valid() and formset.is_valid():
+                    # ذخیره صورت جلسه
+                    session_instance = session_form.save(commit=False)
+                    if not session_instance.pk:
+                        session_instance.project = project
+                        session_instance.created_by = request.user
+                    session_instance.modified_by = request.user
+                    session_instance.save()
+                    
+                    # ذخیره آیتم‌ها
+                    instances = formset.save(commit=False)
+                    for instance in instances:
+                        if not instance.pk:
+                            instance.created_by = request.user
+                        instance.modified_by = request.user
+                        if not instance.measurement_session_number_id:
+                            instance.measurement_session_number = session_instance
+                        instance.save()
+                    
+                    formset.save_m2m()
+                    
+                    # حذف آیتم‌ها
+                    for obj in formset.deleted_objects:
+                        obj.modified_by = request.user
+                        obj.is_active = False
+                        obj.save()
+                    
+                    messages.success(request, "صورت جلسه با موفقیت ذخیره شد")
+                    return redirect('sooratvaziat:session_list', pk=project.pk)
+                else:
+                    messages.error(request, "لطفا خطاهای فرم را برطرف کنید")
+        else:
+            session_form = SessionModelForm(instance=session)
+            if not session:
+                # مقدار اولیه برای صورت جلسه جدید
+                session_form.initial = {
+                    'session_number': f"SESSION-{project.project_code}-{datetime.now().strftime('%Y%m%d')}",
+                    'discipline_choice': 'civil'
+                }
+            
+            # فرم‌ست آیتم‌ها
+            ItemForm = modelform_factory(
+                MeasurementSessionItem,
+                fields=('pricelist_item', 'row_description', 'length', 'width', 'height', 'weight', 'count'),
+                widgets={
+                    'DELETE': HiddenInput(),
+                    'row_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+                }
+            )
+            
+            SessionItemFormSet = inlineformset_factory(
+                MeasurementSession,
+                MeasurementSessionItem,
+                form=ItemForm,
+                extra=3,
+                can_delete=True,
+                fk_name='measurement_session_number',
+            )
+            
+            formset = SessionItemFormSet(instance=session)
+
+        # محاسبه مجموع
+        total_quantity = Decimal('0.00')
+        if session:
+            queryset = MeasurementSessionItem.objects.filter(
+                measurement_session_number=session, 
+                is_active=True
+            )
+            total_quantity = sum(item.get_total_item_amount() for item in queryset)
+
+    except Exception as e:
+        messages.error(request, f"خطا در بارگذاری صفحه: {str(e)}")
+        return redirect('sooratvaziat:project_list')
+
     context = {
         'session': session,
         'session_form': session_form,
         'formset': formset,
         'total_quantity': total_quantity,
-        'project': session.project,  # اضافه کردن پروژه به context
+        'project': project,
+        'is_new': session_id == 'new',
     }
     return render(request, 'sooratvaziat/detailed_session.html', context)
+
+# تابع کمکی برای تبدیل به دسیمال
+def _to_decimal(value, places=2):
+    """تبدیل مقدار به Decimal"""
+    if value is None:
+        return Decimal('0.00')
+    try:
+        decimal_value = Decimal(str(value))
+        return decimal_value.quantize(Decimal('1.' + '0' * places), rounding=ROUND_HALF_UP)
+    except (ValueError, TypeError):
+        return Decimal('0.00')
 
 @login_required
 def project_create(request):
@@ -817,19 +921,19 @@ def project_list(request):
     page_obj = paginator.get_page(page_number)
     
     # ========== بهینه‌سازی آمار با ProjectFinancialSummary ==========
-    project_ids = [project.id for project in page_obj.object_list]
+    pks = [project.id for project in page_obj.object_list]
     
     # ========== بهینه‌سازی آمار با ProjectFinancialSummary ==========
-    project_ids = [project.id for project in page_obj.object_list]
+    pks = [project.id for project in page_obj.object_list]
     
     # دریافت خلاصه‌های مالی برای پروژه‌های این صفحه (سریع!)
     financial_summaries = {}
-    if project_ids:
+    if pks:
         try:
             summaries = ProjectFinancialSummary.objects.filter(
-                project_id__in=project_ids
+                pk__in=pks
             ).select_related('project').values(
-                'project_id',
+                'pk',
                 'total_amount',
                 'total_with_vat',
                 'progress_percentage',
@@ -840,7 +944,7 @@ def project_list(request):
             )
             
             for summary in summaries:
-                financial_summaries[summary['project_id']] = {
+                financial_summaries[summary['pk']] = {
                     'total_amount': summary['total_amount'] or Decimal('0.00'),
                     'total_with_vat': summary['total_with_vat'] or Decimal('0.00'),
                     'progress_percentage': summary['progress_percentage'] or Decimal('0.00'),
@@ -963,52 +1067,786 @@ def project_list(request):
     
     return render(request, 'sooratvaziat/project_list.html', context)
 
-@login_required
-def project_detail(request, project_id):
-    """
-    View برای نمایش جزئیات پروژه
-    """
-    project = get_object_or_404(
-        Project, 
-        id=project_id, 
-        user=request.user
-    )
+def get_progress_class(percentage):
+    """تعیین کلاس CSS برای درصد پیشرفت"""
+    if percentage >= 80:
+        return 'bg-success'
+    elif percentage >= 50:
+        return 'bg-warning'
+    elif percentage >= 20:
+        return 'bg-info'
+    else:
+        return 'bg-danger'
+
+def format_currency(value):
+    """فرمت‌دهی ارز به فارسی"""
+    if value is None:
+        return "۰ ریال"
     
-    # محاسبه آمار پروژه
-    sessions_count = MeasurementSession.objects.filter(project=project).count()
-    items_count = MeasurementSessionItem.objects.filter(
-        measurement_session_number__project=project,
-        is_active=True
-    ).count()
-    
-    # جمع کل متره‌ها
-    total_quantity = MeasurementSessionItem.objects.filter(
-        measurement_session_number__project=project,
-        is_active=True
-    ).aggregate(
-        total=models.Sum('count')  # یا هر فیلد مناسب
-    )['total'] or 0
-    
-    context = {
-        'project': project,
-        'sessions_count': sessions_count,
-        'items_count': items_count,
-        'total_quantity': total_quantity,
-        'title': f'جزئیات پروژه: {project.project_name}',
-        'page_title': project.project_name,
-        'active_menu': 'projects',
+    try:
+        formatted = format_number_int(value)
+        return f"{formatted} ریال"
+    except:
+        return "۰ ریال"
+
+def get_status_badge(status):
+    """تعیین badge برای وضعیت پروژه"""
+    status_map = {
+        'active': 'bg-success',
+        'completed': 'bg-info',
+        'pending': 'bg-warning',
+        'cancelled': 'bg-danger',
+        'on_hold': 'bg-secondary'
     }
-    return render(request, 'sooratvaziat/project_detail.html', context)
+    return status_map.get(status, 'bg-secondary')
 
 @login_required
-def project_edit(request, project_id):
+def project_detail(request, pk):
+    """
+    View برای نمایش جزئیات کامل پروژه
+    """
+    try:
+        project = get_object_or_404(
+            Project, 
+            pk=pk, 
+            user=request.user,
+            is_active=True
+        )
+    except Exception as e:
+        logger.error(f"Error getting project {pk}: {e}")
+        messages.error(request, 'پروژه مورد نظر یافت نشد.')
+        return redirect('sooratvaziat:project_list')
+    
+    # محاسبه آمار
+    statistics = get_project_statistics(project)
+    
+    # محاسبه معیارهای مالی
+    financial_metrics = calculate_financial_metrics(project)
+    
+    # خلاصه مالی
+    financial_summary = get_financial_summary(project)
+    
+    # رویدادهای اخیر
+    recent_events = get_recent_events(project)
+    
+    # هشدارها
+    warnings = get_project_warnings(project, financial_metrics)
+    
+    # داده‌های نمودار
+    chart_data = get_chart_data(project)
+    
+    # اطلاعات اضافی
+    project_duration = calculate_project_duration(project)
+    last_activity = get_last_activity(project)
+    
+    context = {
+        # اطلاعات اصلی
+        'project': project,
+        'financial_metrics': financial_metrics,
+        'financial_summary': financial_summary,
+        'statistics': statistics,
+        
+        # آمار - استفاده از کلیدهای صحیح از تابع get_project_statistics
+        'total_sessions': statistics.get('sessions_count', 0),
+        'approved_sessions': statistics.get('approved_sessions_count', 0),
+        'pending_sessions': statistics.get('pending_sessions_count', 0),
+        'total_items': statistics.get('total_items_count', 0),
+        'total_measured_amount': statistics.get('total_measured_amount', Decimal('0.00')),
+        'formatted_total_measured': format_number_int(statistics.get('total_measured_amount', Decimal('0.00'))),
+        
+        'total_payments': statistics.get('payments_count', 0),
+        'approved_payments': statistics.get('approved_payments_count', 0),
+        'total_paid_amount': statistics.get('total_paid_amount', Decimal('0.00')),
+        'formatted_total_paid': format_number_int(statistics.get('total_paid_amount', Decimal('0.00'))),
+        
+        'total_documents': statistics.get('total_documents', 0),
+        
+        # پیشرفت کلی
+        'overall_progress': financial_metrics.get('progress', Decimal('0.00')),
+        'formatted_progress': financial_metrics.get('progress_display', '۰%'),
+        'progress_class': get_progress_class(financial_metrics.get('progress', 0)),
+        
+        # نمودارها
+        'chart_data': chart_data,
+        
+        # لیست‌های اخیر
+        'recent_sessions': recent_events.get('sessions', []),
+        'recent_payments': recent_events.get('payments', []),
+        
+        # Timeline و هشدارها
+        'recent_events': recent_events,
+        'warnings': warnings,
+        
+        # اطلاعات اضافی
+        'project_duration': project_duration,
+        'last_activity': last_activity,
+        
+        # Template variables
+        'title': f'جزئیات پروژه: {project.project_name}',
+        'page_title': f'پروژه {project.project_name} (کد: {project.project_code})',
+        'active_menu': 'projects',
+        'current_user': request.user,
+        'show_sidebar': True,
+    }
+    
+    return render(request, 'sooratvaziat/project_detail.html', context)
+    
+def calculate_financial_metrics(project):
+    """
+    محاسبه معیارهای مالی بر اساس مدل‌های موجود
+    """
+    try:
+        # مقداردهی اولیه
+        total_paid = Decimal('0.00')
+        total_billed = Decimal('0.00')
+        contract_amount = getattr(project, 'total_contract_amount', Decimal('0.00'))
+        remaining = contract_amount
+        progress = Decimal('0.00')
+        
+        # محاسبه مجموع متره از صورت‌جلسات
+        try:
+            session_items = MeasurementSessionItem.objects.filter(
+                measurement_session_number__project=project,
+                measurement_session_number__is_active=True,
+                is_active=True
+            )
+            total_billed = sum(
+                item.item_total for item in session_items
+            ) or Decimal('0.00')
+        except Exception as e:
+            logger.warning(f"Error calculating from session items: {e}")
+            total_billed = Decimal('0.00')
+        
+        # محاسبه درصد پیشرفت
+        if contract_amount and contract_amount > 0:
+            progress = (total_billed / contract_amount) * 100
+            progress = min(max(progress, 0), 100)
+            remaining = contract_amount - total_billed
+        else:
+            progress = Decimal('0.00')
+            remaining = contract_amount
+        
+        return {
+            'total_paid': total_paid,
+            'total_billed': total_billed,
+            'remaining': remaining,
+            'progress': progress,
+            'contract_amount': contract_amount,
+            'formatted_paid': format_number_int(total_paid),
+            'formatted_billed': format_number_int(total_billed),
+            'formatted_remaining': format_number_int(remaining),
+            'formatted_contract_amount': format_number_int(contract_amount),
+            'progress_display': f"{progress:.1f}%",
+            'progress_class': get_progress_class(progress),
+            'has_financial_data': total_paid > 0 or total_billed > 0,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in calculate_financial_metrics: {e}")
+        return {
+            'total_paid': Decimal('0.00'),
+            'total_billed': Decimal('0.00'),
+            'remaining': getattr(project, 'total_contract_amount', Decimal('0.00')),
+            'progress': Decimal('0.00'),
+            'contract_amount': getattr(project, 'total_contract_amount', Decimal('0.00')),
+            'formatted_paid': '۰',
+            'formatted_billed': '۰',
+            'formatted_remaining': format_number_int(getattr(project, 'total_contract_amount', Decimal('0.00'))),
+            'formatted_contract_amount': format_number_int(getattr(project, 'total_contract_amount', Decimal('0.00'))),
+            'progress_display': '۰%',
+            'progress_class': 'bg-danger',
+            'has_financial_data': False,
+        }
+
+def get_project_statistics(project):
+    """
+    دریافت آمار کلی پروژه بر اساس مدل‌های موجود
+    """
+    stats = {
+        'sessions_count': 0,
+        'approved_sessions_count': 0,
+        'pending_sessions_count': 0,
+        'total_items_count': 0,
+        'unique_pricelist_items_count': 0,
+        'total_measured_amount': Decimal('0.00'),
+        'payments_count': 0,
+        'approved_payments_count': 0,
+        'total_paid_amount': Decimal('0.00'),
+        'total_documents': 0,
+    }
+    
+    try:
+        # آمار صورت‌جلسات (MeasurementSession)
+        sessions = MeasurementSession.objects.filter(
+            project=project,
+            is_active=True
+        )
+        
+        stats['sessions_count'] = sessions.count()
+        stats['approved_sessions_count'] = sessions.filter(is_approved=True).count()
+        stats['pending_sessions_count'] = sessions.filter(is_approved=False).count()
+        
+        # آمار آیتم‌ها
+        session_items = MeasurementSessionItem.objects.filter(
+            measurement_session_number__project=project,
+            measurement_session_number__is_active=True,
+            is_active=True
+        )
+        
+        stats['total_items_count'] = session_items.count()
+        stats['unique_pricelist_items_count'] = session_items.values(
+            'pricelist_item'
+        ).distinct().count()
+        
+        # مبلغ کل متره شده
+        total_amount = session_items.aggregate(
+            total=models.Sum('item_total')
+        )['total'] or Decimal('0.00')
+        stats['total_measured_amount'] = total_amount
+        
+        # آمار پرداخت‌ها (اگر مدل Payment موجود)
+        try:
+            from .models import Payment
+            payments = Payment.objects.filter(
+                project=project,
+                is_active=True
+            )
+            
+            stats['payments_count'] = payments.count()
+            stats['approved_payments_count'] = payments.filter(is_approved=True).count()
+            
+            # مبلغ کل پرداخت شده
+            total_paid = payments.filter(is_approved=True).aggregate(
+                total=models.Sum('amount')
+            )['total'] or Decimal('0.00')
+            stats['total_paid_amount'] = total_paid
+            
+        except ImportError:
+            logger.info("Payment model not available")
+            
+    except Exception as e:
+        logger.error(f"Error getting project statistics: {e}")
+    
+    # ایجاد کلیدهای سازگار با template (اگر نیاز باشد)
+    stats['total_sessions'] = stats['sessions_count']
+    stats['approved_sessions'] = stats['approved_sessions_count']
+    stats['pending_sessions'] = stats['pending_sessions_count']
+    stats['total_items'] = stats['total_items_count']
+    
+    return stats
+    
+def get_financial_summary(project):
+    """
+    دریافت خلاصه مالی از ProjectFinancialSummary
+    """
+    try:
+        summary = ProjectFinancialSummary.objects.filter(project=project).first()
+        if summary:
+            return {
+                'total_amount': summary.total_amount,
+                'total_quantity': summary.total_quantity,
+                'total_with_vat': summary.total_with_vat,
+                'progress_percentage': getattr(summary, 'progress_percentage', 0),
+                'sessions_count': getattr(summary, 'sessions_count', 0),
+                'approved_sessions_count': getattr(summary, 'approved_sessions_count', 0),
+                'last_updated': summary.last_updated,
+                'formatted_amount': format_number_int(summary.total_amount),
+                'formatted_quantity': format_number_int(summary.total_quantity),
+                'progress_display': f"{getattr(summary, 'progress_percentage', 0):.1f}%",
+            }
+        return None
+    except Exception as e:
+        logger.warning(f"Error getting financial summary: {e}")
+        return None
+
+def get_recent_sessions(project, limit=5):
+    """
+    دریافت صورت‌جلسات اخیر
+    """
+    try:
+        sessions = MeasurementSession.objects.filter(
+            project=project,
+            is_active=True
+        ).select_related(
+            'created_by',
+            'discipline_choice'
+        ).order_by('-session_date', '-created_at')[:limit]
+        
+        return [
+            {
+                'id': session.id,
+                'session_number': session.session_number,
+                'session_date': session.session_date,
+                'session_date_jalali': getattr(session, 'session_date_jalali', str(session.session_date)),
+                'discipline': session.get_discipline_choice_display(),
+                'total_amount': sum(item.item_total for item in session.items.filter(is_active=True)) or Decimal('0.00'),
+                'items_count': session.items.filter(is_active=True).count(),
+                'is_approved': getattr(session, 'is_approved', False),
+                'created_by': getattr(session.created_by, 'username', 'نامشخص'),
+                'formatted_amount': format_number_int(
+                    sum(item.item_total for item in session.items.filter(is_active=True))
+                ),
+            }
+            for session in sessions
+        ]
+    except Exception as e:
+        logger.error(f"Error getting recent sessions: {e}")
+        return []
+
+def get_recent_payments(project, limit=5):
+    """
+    دریافت پرداخت‌های اخیر (اگر مدل موجود)
+    """
+    payments = []
+    try:
+        from .models import Payment
+        db_payments = Payment.objects.filter(
+            project=project,
+            is_active=True,
+            is_approved=True
+        ).select_related('created_by').order_by('-payment_date', '-created_at')[:limit]
+        
+        payments = [
+            {
+                'id': payment.id,
+                'payment_number': getattr(payment, 'payment_number', f'P{payment.id}'),
+                'payment_date': payment.payment_date,
+                'amount': payment.amount,
+                'description': getattr(payment, 'description', ''),
+                'created_by': getattr(payment.created_by, 'username', 'نامشخص'),
+                'formatted_amount': format_number_int(payment.amount),
+            }
+            for payment in db_payments
+        ]
+    except ImportError:
+        logger.info("Payment model not available")
+    except Exception as e:
+        logger.warning(f"Error getting recent payments: {e}")
+    
+    return payments
+
+def get_sessions_pagination(request, project):
+    """
+    Pagination برای صورت‌جلسات
+    """
+    try:
+        all_sessions = MeasurementSession.objects.filter(
+            project=project,
+            is_active=True
+        ).select_related('created_by').order_by('-session_date')
+        
+        paginator = Paginator(all_sessions, 10)
+        page_number = request.GET.get('sessions_page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        # اضافه کردن اطلاعات اضافی به هر session
+        for session in page_obj:
+            session.total_amount = sum(
+                item.item_total for item in session.items.filter(is_active=True)
+            ) or Decimal('0.00')
+            session.formatted_amount = format_number_int(session.total_amount)
+            session.items_count = session.items.filter(is_active=True).count()
+        
+        return page_obj
+    except Exception as e:
+        logger.error(f"Error in sessions pagination: {e}")
+        return None
+
+def get_payments_pagination(request, project):
+    """
+    Pagination برای پرداخت‌ها
+    """
+    try:
+        from .models import Payment
+        all_payments = Payment.objects.filter(
+            project=project,
+            is_active=True
+        ).order_by('-payment_date')
+        
+        paginator = Paginator(all_payments, 10)
+        page_number = request.GET.get('payments_page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        # فرمت کردن مبالغ
+        for payment in page_obj:
+            payment.formatted_amount = format_number_int(payment.amount)
+        
+        return page_obj
+    except ImportError:
+        return None
+    except Exception as e:
+        logger.error(f"Error in payments pagination: {e}")
+        return None
+
+def get_chart_data(project):
+    """
+    داده‌های نمودار بر اساس MeasurementSession
+    """
+    try:
+        from datetime import date
+        import calendar
+        
+        months_data = []
+        end_date = timezone.now().date()
+        
+        # 12 ماه گذشته
+        for i in range(12, 0, -1):
+            # محاسبه ماه
+            year_month = end_date.replace(day=1) - timedelta(days=30*i)
+            month_start = year_month.replace(day=1)
+            next_month = month_start.replace(day=28) + timedelta(days=4)
+            month_end = next_month - timedelta(days=next_month.day)
+            
+            # صورت‌جلسات ماهانه
+            monthly_sessions = MeasurementSession.objects.filter(
+                project=project,
+                session_date__range=[month_start, month_end],
+                is_active=True
+            )
+            
+            month_amount = Decimal('0.00')
+            for session in monthly_sessions:
+                # محاسبه مبلغ از آیتم‌ها
+                session_amount = sum(
+                    item.item_total for item in session.items.filter(is_active=True)
+                )
+                month_amount += session_amount
+            
+            # نام ماه به فارسی (ساده)
+            month_names = ['ژانویه', 'فوریه', 'مارس', 'آوریل', 'مه', 'ژوئن',
+                          'ژوئیه', 'اوت', 'سپتامبر', 'اکتبر', 'نوامبر', 'دسامبر']
+            month_name = f"{month_names[month_start.month-1]} {month_start.year}"
+            
+            months_data.append({
+                'month': month_name,
+                'sessions_amount': float(month_amount),
+                'payments_amount': 0.0,  # فعلاً صفر - نیاز به مدل Payment
+                'formatted_sessions': format_number_int(month_amount),
+                'formatted_payments': '۰',
+                'session_count': monthly_sessions.count(),
+            })
+        
+        return months_data[::-1]  # معکوس کردن
+        
+    except Exception as e:
+        logger.error(f"Error generating chart data: {e}")
+        return []
+
+def get_recent_events(project, limit=10):
+    """
+    دریافت رویدادهای اخیر برای نمایش در sidebar
+    """
+    events = {
+        'sessions': [],
+        'payments': [],
+        'activities': []
+    }
+    
+    try:
+        # صورت‌جلسات اخیر
+        recent_sessions = MeasurementSession.objects.filter(
+            project=project,
+            is_active=True
+        ).select_related('created_by').order_by('-session_date')[:5]
+        
+        for session in recent_sessions:
+            session_info = {
+                'id': session.id,
+                'session_number': session.session_number,
+                'session_date': session.session_date,
+                'discipline': session.get_discipline_choice_display(),
+                'total_amount': sum(item.item_total for item in session.items.filter(is_active=True)) or Decimal('0.00'),
+                'items_count': session.items.filter(is_active=True).count(),
+                'is_approved': getattr(session, 'is_approved', False),
+                'created_by': getattr(session.created_by, 'username', 'نامشخص'),
+            }
+            events['sessions'].append(session_info)
+        
+        # پرداخت‌های اخیر
+        try:
+            from .models import Payment
+            recent_payments = Payment.objects.filter(
+                project=project,
+                is_active=True
+            ).order_by('-payment_date')[:5]
+            
+            for payment in recent_payments:
+                payment_info = {
+                    'id': payment.id,
+                    'payment_date': payment.payment_date,
+                    'amount': payment.amount,
+                    'description': getattr(payment, 'description', ''),
+                    'is_approved': getattr(payment, 'is_approved', False),
+                }
+                events['payments'].append(payment_info)
+                
+        except ImportError:
+            pass
+            
+        # فعالیت‌های ترکیبی برای timeline
+        activities = []
+        
+        # اضافه کردن صورت‌جلسات به فعالیت‌ها
+        for session in recent_sessions:
+            activities.append({
+                'type': 'session',
+                'date': session.session_date,
+                'description': f'صورت‌جلسه #{session.session_number} ثبت شد',
+                'icon': 'fas fa-file-contract',
+                'color': 'success' if session.is_approved else 'warning'
+            })
+        
+        # اضافه کردن پرداخت‌ها به فعالیت‌ها
+        try:
+            from .models import Payment
+            for payment in recent_payments:
+                activities.append({
+                    'type': 'payment',
+                    'date': payment.payment_date,
+                    'description': f'پرداخت {format_number_int(payment.amount)} ریال ثبت شد',
+                    'icon': 'fas fa-money-bill-wave',
+                    'color': 'info'
+                })
+        except:
+            pass
+            
+        # مرتب‌سازی بر اساس تاریخ
+        activities.sort(key=lambda x: x['date'], reverse=True)
+        events['activities'] = activities[:limit]
+        
+    except Exception as e:
+        logger.error(f"Error getting recent events: {e}")
+    
+    return events
+    
+def get_project_warnings(project, financial_metrics):
+    """
+    دریافت هشدارهای پروژه
+    """
+    warnings = []
+    
+    try:
+        progress = financial_metrics['progress']
+        contract_amount = project.contract_amount or Decimal('0.00')
+        total_billed = financial_metrics['total_billed']
+        
+        # 1. پیشرفت بیش از 100%
+        if progress > 100:
+            warnings.append({
+                'type': 'danger',
+                'title': '⚠️ پیشرفت بیش از حد',
+                'message': f'درصد پیشرفت ({progress:.1f}%) از مبلغ قرارداد فراتر رفته است',
+                'icon': 'fas fa-exclamation-triangle',
+                'priority': 'high'
+            })
+        
+        # 2. عدم تطابق متره و پرداخت
+        elif abs(total_billed - financial_metrics['total_paid']) > contract_amount * 0.1:
+            discrepancy = abs(total_billed - financial_metrics['total_paid'])
+            warnings.append({
+                'type': 'warning',
+                'title': '⚠️ عدم تطابق مالی',
+                'message': f'تفاوت {format_number_int(discrepancy)} ریال بین متره و پرداخت وجود دارد',
+                'icon': 'fas fa-balance-scale',
+                'priority': 'medium'
+            })
+        
+        # 3. صورت‌جلسات تأیید نشده
+        pending_sessions = MeasurementSession.objects.filter(
+            project=project,
+            is_active=True,
+            is_approved=False
+        ).count()
+        
+        if pending_sessions > 0:
+            warnings.append({
+                'type': 'info',
+                'title': 'ℹ️ صورت‌جلسات در انتظار',
+                'message': f'{pending_sessions} صورت‌جلسه منتظر تأیید است',
+                'icon': 'fas fa-hourglass-half',
+                'priority': 'low'
+            })
+        
+        # 4. پیشرفت پایین با وجود صورت‌جلسات
+        total_sessions = MeasurementSession.objects.filter(
+            project=project, is_active=True
+        ).count()
+        
+        if progress < 20 and total_sessions > 2:
+            warnings.append({
+                'type': 'warning',
+                'title': '⚠️ پیشرفت کند',
+                'message': f'با وجود {total_sessions} صورت‌جلسه، پیشرفت تنها {progress:.1f}% است',
+                'icon': 'fas fa-turtle',
+                'priority': 'medium'
+            })
+        
+        # 5. عدم به‌روزرسانی خلاصه مالی
+        try:
+            summary = ProjectFinancialSummary.objects.filter(project=project).first()
+            if summary and summary.last_updated:
+                days_since_update = (timezone.now().date() - summary.last_updated.date()).days
+                if days_since_update > 30:
+                    warnings.append({
+                        'type': 'info',
+                        'title': 'ℹ️ خلاصه مالی قدیمی',
+                        'message': f'آخرین به‌روزرسانی خلاصه مالی {days_since_update} روز پیش بوده است',
+                        'icon': 'fas fa-calendar-times',
+                        'priority': 'low'
+                    })
+        except:
+            pass
+        
+        return warnings
+        
+    except Exception as e:
+        logger.error(f"Error getting project warnings: {e}")
+        return []
+
+def calculate_project_duration(project):
+    """
+    محاسبه مدت زمان پروژه
+    """
+    try:
+        # بررسی فیلدهای تاریخ در مدل Project
+        start_date = getattr(project, 'start_date', None)
+        end_date = getattr(project, 'end_date', None)
+        execution_year = getattr(project, 'execution_year', None)
+        
+        if start_date and end_date:
+            if isinstance(start_date, str):
+                try:
+                    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                except:
+                    start_date = None
+            
+            if isinstance(end_date, str):
+                try:
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                except:
+                    end_date = None
+            
+            if start_date and end_date:
+                duration = end_date - start_date
+                total_days = duration.days
+                
+                years = total_days // 365
+                months = (total_days % 365) // 30
+                days = total_days % 30
+                
+                if years > 0:
+                    duration_text = f"{years} سال و {months} ماه"
+                elif months > 0:
+                    duration_text = f"{months} ماه و {days} روز"
+                else:
+                    duration_text = f"{days} روز"
+                
+                return {
+                    'total_days': total_days,
+                    'years': years,
+                    'months': months,
+                    'days': days,
+                    'text': duration_text,
+                    'is_completed': end_date <= timezone.now().date(),
+                    'start_date': start_date,
+                    'end_date': end_date,
+                }
+        
+        # Fallback: بر اساس execution_year
+        elif execution_year:
+            current_year = timezone.now().year
+            duration_years = current_year - execution_year + 1
+            return {
+                'total_days': 0,
+                'years': duration_years,
+                'months': 0,
+                'days': 0,
+                'text': f"{duration_years} سال",
+                'is_completed': False,
+                'start_date': None,
+                'end_date': None,
+            }
+        
+        return {
+            'total_days': 0,
+            'years': 0,
+            'months': 0,
+            'days': 0,
+            'text': 'مدت زمان مشخص نشده',
+            'is_completed': False,
+            'start_date': None,
+            'end_date': None,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating project duration: {e}")
+        return {
+            'total_days': 0,
+            'text': 'خطا در محاسبه',
+            'is_completed': False,
+        }
+
+def get_last_activity(project):
+    """
+    دریافت آخرین فعالیت پروژه
+    """
+    try:
+        last_activity = None
+        activity_type = None
+        
+        # آخرین صورت‌جلسه
+        try:
+            last_session = MeasurementSession.objects.filter(
+                project=project,
+                is_active=True
+            ).aggregate(last=Max('updated_at'))['last']
+            
+            if last_session:
+                last_activity = last_session
+                activity_type = 'session'
+        except Exception as e:
+            logger.warning(f"Error getting last session: {e}")
+        
+        # آخرین به‌روزرسانی خلاصه مالی
+        try:
+            last_summary = ProjectFinancialSummary.objects.filter(
+                project=project
+            ).aggregate(last=Max('last_updated'))['last']
+            
+            if last_summary and (not last_activity or last_summary > last_activity):
+                last_activity = last_summary
+                activity_type = 'financial'
+        except Exception as e:
+            logger.warning(f"Error getting last financial update: {e}")
+        
+        # فرمت نمایش
+        if last_activity:
+            # تبدیل به جلالی (اگر jdatetime موجود)
+            try:
+                from jdatetime import datetime as jdatetime
+                if isinstance(last_activity, datetime):
+                    jalali_date = jdatetime.fromgregorian(datetime=last_activity)
+                    return jalali_date.strftime('%Y/%m/%d %H:%M')
+                else:
+                    return last_activity.strftime('%Y/%m/%d %H:%M')
+            except ImportError:
+                return last_activity.strftime('%Y/%m/%d %H:%M')
+        else:
+            return 'فعالیتی ثبت نشده'
+            
+    except Exception as e:
+        logger.error(f"Error getting last activity: {e}")
+        return 'نامشخص'
+
+@login_required
+def project_edit(request, pk):
     """
     View برای ویرایش پروژه
     """
     # دریافت پروژه با بررسی مالکیت
     project = get_object_or_404(
-        Project, 
-        id=project_id, 
+        Project,
+        pk=pk, 
         user=request.user,
         is_active=True
     )
@@ -1021,6 +1859,7 @@ def project_edit(request, project_id):
         )
         
         if form.is_valid():
+            print("✅ فرم ویرایش معتبر است")
             try:
                 with transaction.atomic():
                     # ذخیره تغییرات
@@ -1055,7 +1894,7 @@ def project_edit(request, project_id):
                     if redirect_to == 'project_list':
                         return redirect('sooratvaziat:project_list')
                     else:
-                        return redirect('sooratvaziat:project_detail', project_id=project_id)
+                        return redirect('sooratvaziat:project_detail', pk=pk)
                         
             except Exception as e:
                 messages.error(
@@ -1064,6 +1903,7 @@ def project_edit(request, project_id):
                 )
                 logger.error(f"Project edit error: {str(e)}", exc_info=True)
         else:
+            print("❌ فرم ویرایش نامعتبر است:", form.errors)
             # نمایش خطاهای فرم
             for field, errors in form.errors.items():
                 for error in errors:
@@ -1073,32 +1913,36 @@ def project_edit(request, project_id):
                         f'خطا در {field_label}: {error}'
                     )
     else:
+        print(f"📝 نمایش فرم ویرایش برای پروژه {project.pk}")
         # فرم اولیه با داده‌های پروژه
         form = ProjectEditForm(
             instance=project,
             original_project=project
         )
-    
-    # محاسبه آمار پروژه برای نمایش
-    sessions_count = MeasurementSession.objects.filter(project=project).count()
-    items_count = MeasurementSessionItem.objects.filter(
-        measurement_session_number__project=project,
-        is_active=True
-    ).count()
+        from jdatetime import date as jdate
+        # تنظیم initial برای تاریخ شمسی و فیلدهای لوکیشن
+        initial_data = {}
+        if project.contract_date:
+            jdate_obj = jdate.fromgregorian(date=project.contract_date)
+            initial_data['contract_date'] = jdate_obj.strftime('%Y/%m/%d')
+
+        form = ProjectCreateForm(
+            instance=project,
+            current_user=request.user,
+            initial=initial_data,
+        )
     
     # دریافت تاریخچه تغییرات (اگر سیستم audit trail دارید)
     # change_history = ProjectChangeLog.objects.filter(project=project).order_by('-created_at')[:5]
     
     context = {
         'form': form,
-        'project': project,
-        'sessions_count': sessions_count,
-        'items_count': items_count,
-        'title': f'ویرایش پروژه: {project.project_name}',
-        'page_title': f'ویرایش {project.project_name}',
+        'title': f'ویرایش پروژه {project.project_name}',
+        'page_title': 'ویرایش پروژه',
         'active_menu': 'projects',
-        'has_unsaved_changes': False,
-        'project_status': project.get_status_display() if hasattr(project, 'get_status_display') else project.status,
+        'province_cities_json': form.get_province_cities_json(),
+        'current_user': request.user,
+        'project': project,
     }
     return render(request, 'sooratvaziat/project_edit.html', context)
 
@@ -1153,14 +1997,14 @@ def detect_changes(original_project, updated_project, form):
     return changes if changes else []
 
 @login_required
-def project_toggle_status(request, project_id):
+def project_toggle_status(request, pk):
     """
     تغییر وضعیت فعال/غیرفعال پروژه (AJAX)
     """
     if request.method == 'POST':
         project = get_object_or_404(
             Project, 
-            id=project_id, 
+            pk=pk, 
             user=request.user
         )
         
@@ -1192,13 +2036,13 @@ def project_toggle_status(request, project_id):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 @login_required
-def project_duplicate(request, project_id):
+def project_duplicate(request, pk):
     """
     کپی کردن پروژه (Duplicate)
     """
     project = get_object_or_404(
         Project, 
-        id=project_id, 
+        pk=pk, 
         user=request.user,
         is_active=True
     )
@@ -1231,7 +2075,7 @@ def project_duplicate(request, project_id):
                     f'پروژه "{new_project.project_name}" با موفقیت کپی شد (کد: {new_project.project_code})'
                 )
                 
-                return redirect('sooratvaziat:project_edit', project_id=new_project.id)
+                return redirect('sooratvaziat:project_edit', pk=new_project.id)
                 
         except Exception as e:
             messages.error(
@@ -1250,13 +2094,13 @@ def project_duplicate(request, project_id):
 logger = logging.getLogger(__name__)
 
 @login_required
-def project_delete(request, project_id):
+def project_delete(request, pk):
     """
     View برای حذف پروژه
     """
     project = get_object_or_404(
         Project, 
-        id=project_id, 
+        pk=pk, 
         user=request.user,
         is_active=True
     )
@@ -1282,7 +2126,7 @@ def project_delete(request, project_id):
                 request, 
                 f'خطا در حذف پروژه: {str(e)}'
             )
-            return redirect('sooratvaziat:project_edit', project_id=project_id)
+            return redirect('sooratvaziat:project_edit', pk=pk)
     
     # GET request - نمایش صفحه تأیید حذف
     context = {
@@ -1324,15 +2168,15 @@ def project_financial_report_list(request):
     page_obj = paginator.get_page(page_number)
     
     # دریافت خلاصه‌های مالی برای پروژه‌های این صفحه
-    project_ids = [project.id for project in page_obj.object_list]
+    pks = [project.id for project in page_obj.object_list]
     financial_summaries = {}
     
-    if project_ids:
+    if pks:
         try:
             summaries = ProjectFinancialSummary.objects.filter(
-                project_id__in=project_ids
+                pk__in=pks
             ).select_related('project').values(
-                'project_id',
+                'pk',
                 'total_amount',
                 'total_with_vat',
                 'progress_percentage',
@@ -1343,7 +2187,7 @@ def project_financial_report_list(request):
             )
             
             for summary in summaries:
-                financial_summaries[summary['project_id']] = {
+                financial_summaries[summary['pk']] = {
                     'total_amount': summary['total_amount'] or Decimal('0.00'),
                     'total_with_vat': summary['total_with_vat'] or Decimal('0.00'),
                     'progress_percentage': summary['progress_percentage'] or Decimal('0.00'),
@@ -1422,20 +2266,20 @@ def project_financial_report_list(request):
     return render(request, 'sooratvaziat/project_financial_report_list.html', context)
 
 @login_required
-def project_financial_report(request, project_id):
+def project_financial_report(request, pk):
     """گزارش مالی پروژه - سریع از دیتابیس"""
     project = get_object_or_404(
         Project.objects.filter(user=request.user), 
-        id=project_id
+        pk=pk
     )
     
     # دریافت خلاصه مالی (بدون محاسبه!)
-    financial_overview = FinancialReportGenerator.get_project_financial_overview(project_id)
+    financial_overview = FinancialReportGenerator.get_project_financial_overview(pk)
     
     # دریافت ریز مالی بر اساس رشته (اگر مشخص شده)
     discipline_choice = request.GET.get('discipline')
     detailed_report = FinancialReportGenerator.get_detailed_financial_report(
-        project_id, 
+        pk, 
         discipline_choice
     )
     
@@ -1468,16 +2312,16 @@ def session_financial_detail(request, session_id):
     return render(request, 'sooratvaziat/session_financial_detail.html', context)
 
 @login_required
-def riz_mali_detail(request, project_id, discipline_choice=None):
+def riz_mali_detail(request, pk, discipline_choice=None):
     """ریز مالی - سریع از دیتابیس"""
     project = get_object_or_404(
         Project.objects.filter(user=request.user), 
-        id=project_id
+        pk=pk
     )
     
     # دریافت ریز مالی (بدون محاسبه!)
     detailed_financials = FinancialReportGenerator.get_detailed_financial_report(
-        project_id, 
+        pk, 
         discipline_choice
     )
     
@@ -1485,7 +2329,7 @@ def riz_mali_detail(request, project_id, discipline_choice=None):
     discipline_summary = {}
     if discipline_choice:
         try:
-            summary = ProjectFinancialSummary.objects.get(project_id=project_id)
+            summary = ProjectFinancialSummary.objects.get(pk=pk)
             if discipline_choice == 'ab':
                 discipline_summary = {
                     'quantity': summary.total_quantity_abnieh,
@@ -1515,10 +2359,10 @@ def riz_mali_detail(request, project_id, discipline_choice=None):
 
 # ویو جدید برای ریز مالی پروژه
 @login_required
-def project_financial_report(request, project_id):
+def project_financial_report(request, pk):
     # فقط پروژه‌های کاربر جاری
     projects = Project.objects.filter(user=request.user)
-    project = get_object_or_404(projects, id=project_id)
+    project = get_object_or_404(projects, pk=pk)
     
     disciplines_dict = {choice.value: choice.label for choice in DisciplineChoices}
     
@@ -1638,7 +2482,7 @@ def project_financial_report(request, project_id):
     grand_total_quantity = grand_total_quantity.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
     grand_total_amount = grand_total_amount.quantize(Decimal('1'), rounding=ROUND_HALF_UP)
     
-    # خروجی‌ها - اضافه کردن project_id به پارامترها
+    # خروجی‌ها - اضافه کردن pk به پارامترها
     export = request.GET.get('export')
     if export == 'xlsx':
         return generate_excel_report(project, data_by_discipline, grand_total_quantity, grand_total_amount)
@@ -1780,7 +2624,7 @@ def search(request):
                 'type': 'project',
                 'title': project.title,
                 'description': f"پروژه: {project.user.name if hasattr(project, 'user') else 'مشخص نشده'}",
-                'url': reverse('sooratvaziat:project_detail', kwargs={'project_id': project.id}),
+                'url': reverse('sooratvaziat:project_detail', kwargs={'pk': project.pk}),
                 'icon': 'bi-building',
                 'highlight': query
             })
@@ -1802,7 +2646,7 @@ def search(request):
                 'type': 'riz_metre',
                 'title': riz_metre.title,
                 'description': f"ریز متره: {riz_metre.project.title if hasattr(riz_metre, 'project') else ''}",
-                'url': reverse('sooratvaziat:riz_metre', kwargs={'project_id': riz_metre.project.id if hasattr(riz_metre, 'project') else 1}),
+                'url': reverse('sooratvaziat:riz_metre', kwargs={'id': riz_metre.project.id if hasattr(riz_metre, 'project') else 1}),
                 'icon': 'bi-rulers',
                 'highlight': query
             })
@@ -1845,7 +2689,7 @@ def search_ajax(request):
                     'id': project.id,
                     'title': project.title,
                     'type': 'project',
-                    'url': reverse('sooratvaziat:project_detail', kwargs={'project_id': project.id}),
+                    'url': reverse('sooratvaziat:project_detail', kwargs={'pk': project.id}),
                     'icon': 'bi-building'
                 })
             

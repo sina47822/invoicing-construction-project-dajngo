@@ -187,7 +187,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'sooratvaziat:project_detail' project.id %}" class="text-decoration-none">
+                                <a href="{% url 'sooratvaziat:project_detail' project.pk %}" class="text-decoration-none">
                                     {{ project.project_name }}
                                 </a>
                                 {% if project.description %}
@@ -249,27 +249,27 @@
                             </td>
                             <td>
                                 <div class="btn-group-vertical" role="group">
-                                    <a href="{% url 'sooratvaziat:project_detail' project.id %}" 
+                                    <a href="{% url 'sooratvaziat:project_detail' project.pk %}" 
                                     class="btn btn-sm btn-info mb-1" 
                                     title="مشاهده جزئیات">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'sooratvaziat:project_edit' project.id %}" 
+                                    <a href="{% url 'sooratvaziat:project_edit' project.pk %}" 
                                     class="btn btn-sm btn-warning mb-1" 
                                     title="ویرایش">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'sooratvaziat:session_list' project.id %}" 
+                                    <a href="{% url 'sooratvaziat:session_list' project.pk %}" 
                                     class="btn btn-sm btn-success mb-1" 
                                     title="صورت‌جلسات">
                                         <i class="fas fa-file-alt"></i>
                                     </a>
-                                    <a href="{% url 'sooratvaziat:project_financial_report' project.id %}" 
+                                    <a href="{% url 'sooratvaziat:project_financial_report' project.pk %}" 
                                     class="btn btn-sm btn-secondary mb-1" 
                                     title="گزارش مالی">
                                         <i class="fas fa-chart-line"></i>
                                     </a>
-                                    <a href="{% url 'sooratvaziat:project_duplicate' project.id %}" 
+                                    <a href="{% url 'sooratvaziat:project_duplicate' project.pk %}" 
                                     class="btn btn-sm btn-light mb-1" 
                                     title="کپی پروژه">
                                         <i class="fas fa-copy"></i>
@@ -277,7 +277,7 @@
                                     <button type="button" 
                                             class="btn btn-sm btn-danger" 
                                             title="حذف" 
-                                            onclick="confirmDelete({{ project.id }}, '{{ project.project_name }}')">
+                                            onclick="confirmDelete({{ project.pk }}, '{{ project.project_name }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -350,6 +350,9 @@
     </div>
 </div>
 
+{% endblock %}
+{% block extra_js %}
+
 <!-- ========== JavaScript برای تأیید حذف ========== -->
 <script>
 function confirmDelete(projectId, projectName) {
@@ -370,6 +373,8 @@ function confirmDelete(projectId, projectName) {
     }
 }
 </script>
+{% endblock %}
+{% block extra_css %}
 
 <!-- ========== CSS اضافی ========== -->
 <style>

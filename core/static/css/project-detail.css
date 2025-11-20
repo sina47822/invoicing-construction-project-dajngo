@@ -1,0 +1,77 @@
+/* static/css/project-detail.css */
+.project-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.info-item {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.timeline-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.timeline-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.timeline-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.timeline-container::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 10px;
+}
+
+.timeline-container::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,.075);
+}
+
+.stats-card .card-body {
+    padding: 1.5rem;
+}
+
+.progress-custom .progress-bar {
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .project-header {
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .project-header .row {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .info-item {
+        margin-bottom: 1rem;
+    }
+    
+    .timeline-container {
+        max-height: 300px;
+    }
+}

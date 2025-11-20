@@ -1,0 +1,400 @@
+{% load humanize %}
+
+<!-- templates/sooratvaziat/partials/project_card.html -->
+<div class="col-lg-4 col-md-6 mb-4 project-card animate__animated animate__fadeInUp" 
+     data-status="{{ project.status|default:'in_progress' }}"
+     data-title="{{ project.project_name|lower }}"
+     data-code="{{ project.project_code|lower }}"
+     data-employer="{{ project.employer|lower }}"
+     data-city="{{ project.city|lower }}"
+     data-province="{{ project.province|lower }}"
+     data-year="{{ project.execution_year }}"
+     data-contractor="{{ project.contractor|lower }}"
+     data-consultant="{{ project.consultant|lower }}"
+     data-supervising-engineer="{{ project.supervising_engineer|lower }}"
+     data-contract-number="{{ project.contract_number|lower }}"
+     data-contract-amount="{{ project.contract_amount }}"
+     data-created="{{ project.created_at|date:'Y-m-d' }}"
+     data-updated="{{ project.updated_at|date:'Y-m-d' }}">
+
+    <div class="card h-100 shadow-sm border-0 project-card-inner">
+        <!-- Card Header with Project Basic Info -->
+        <div class="card-header bg-gradient-primary text-white position-relative pt-3 pb-3">
+            <!-- Quick Actions Dropdown -->
+            <div class="project-actions position-absolute" style="top: 10px; left: 15px;">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'sooratvaziat:project_detail' project.pk %}">
+                                <i class="fas fa-eye me-2"></i>مشاهده جزئیات
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'sooratvaziat:project_edit' project.pk %}">
+                                <i class="fas fa-edit me-2"></i>ویرایش پروژه
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="{% url 'sooratvaziat:project_delete' project.pk %}">
+                                <i class="fas fa-trash me-2"></i>حذف پروژه
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Project Title and Basic Info -->
+            <div class="text-center">
+                <h5 class="card-title mb-2 project-title fw-bold">
+                    <i class="fas fa-project-diagram me-2"></i>
+                    {{ project.project_name }}
+                </h5>
+                
+                <div class="d-flex justify-content-center align-items-center flex-wrap gap-3">
+                    <span class="badge bg-light text-dark project-code">
+                        <i class="fas fa-hashtag me-1"></i>
+                        کد: {{ project.project_code|default:"ندارد" }}
+                    </span>
+                    
+                    <span class="badge bg-light text-dark project-year">
+                        <i class="fas fa-calendar me-1"></i>
+                        سال: {{ project.execution_year|default:"نامشخص" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body d-flex flex-column">
+            <!-- Status and Priority Section -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    {% if project.status %}
+                    <span class="badge {% if project.status == 'active' %}bg-success{% elif project.status == 'completed' %}bg-primary{% elif project.status == 'suspended' %}bg-warning{% else %}bg-secondary{% endif %}">
+                        <i class="fas fa-circle me-1"></i>
+                        {{ project.get_status_display|default:"در حال انجام" }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    {% if project.priority %}
+                    <span class="badge {% if project.priority == 'high' %}bg-danger{% elif project.priority == 'medium' %}bg-warning{% else %}bg-info{% endif %}">
+                        <i class="fas fa-flag me-1"></i>
+                        {{ project.get_priority_display|default:"عادی" }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contract Information -->
+            <div class="contract-info mb-3">
+                <h6 class="section-title text-primary mb-2">
+                    <i class="fas fa-file-contract me-2"></i>
+                    اطلاعات قرارداد
+                </h6>
+                
+                <div class="row g-2 small">
+                    <div class="col-12">
+                        <strong><i class="fas fa-user-tie me-2 text-muted"></i>کارفرما:</strong>
+                        <span class="text-dark">{{ project.employer|default:"تعیین نشده" }}</span>
+                    </div>
+                    <div class="col-12">
+                        <strong><i class="fas fa-hard-hat me-2 text-muted"></i>پیمانکار:</strong>
+                        <span class="text-dark">{{ project.contractor|default:"تعیین نشده" }}</span>
+                    </div>
+                    {% if project.consultant %}
+                    <div class="col-12">
+                        <strong><i class="fas fa-user-graduate me-2 text-muted"></i>مشاور:</strong>
+                        <span class="text-dark">{{ project.consultant }}</span>
+                    </div>
+                    {% endif %}
+                    {% if project.supervising_engineer %}
+                    <div class="col-12">
+                        <strong><i class="fas fa-user-cog me-2 text-muted"></i>ناظر:</strong>
+                        <span class="text-dark">{{ project.supervising_engineer }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="financial-summary mb-3">
+                <h6 class="section-title text-success mb-2">
+                    <i class="fas fa-chart-line me-2"></i>
+                    خلاصه مالی
+                </h6>
+                
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <div class="bg-light rounded p-2">
+                            <small class="text-muted d-block">مبلغ قرارداد</small>
+                            <strong class="text-primary">
+                                {% if project.contract_amount %}
+                                {{ project.contract_amount|floatformat:0|intcomma }}
+                                {% else %}
+                                ۰
+                                {% endif %}
+                            </strong>
+                            <small class="d-block text-muted">ریال</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-light rounded p-2">
+                            <small class="text-muted d-block">پیشرفت مالی</small>
+                            <strong class="text-warning">۷۸٪</strong>
+                            <small class="d-block text-muted">تحقق یافته</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-light rounded p-2">
+                            <small class="text-muted d-block">مانده</small>
+                            <strong class="text-danger">۲۲٪</strong>
+                            <small class="d-block text-muted">باقیمانده</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="project-details mb-3">
+                <h6 class="section-title text-info mb-2">
+                    <i class="fas fa-info-circle me-2"></i>
+                    جزئیات پروژه
+                </h6>
+                
+                <div class="row g-2 small">
+                    <div class="col-6">
+                        <strong><i class="fas fa-map-marker-alt me-2 text-muted"></i>موقعیت:</strong>
+                        <span class="text-dark">
+                            {% if project.city and project.province %}
+                            {{ project.city }} - {{ project.province }}
+                            {% else %}
+                            تعیین نشده
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="col-6">
+                        <strong><i class="fas fa-hashtag me-2 text-muted"></i>شماره قرارداد:</strong>
+                        <span class="text-dark">{{ project.contract_number|default:"ندارد" }}</span>
+                    </div>
+                    
+                    {% if project.start_date %}
+                    <div class="col-6">
+                        <strong><i class="fas fa-play-circle me-2 text-muted"></i>تاریخ شروع:</strong>
+                        <span class="text-success">{{ project.start_date|date:"Y/m/d" }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if project.end_date %}
+                    <div class="col-6">
+                        <strong><i class="fas fa-stop-circle me-2 text-muted"></i>تاریخ پایان:</strong>
+                        <span class="text-danger">{{ project.end_date|date:"Y/m/d" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="progress-section mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">
+                        <i class="fas fa-tasks me-1"></i>پیشرفت فیزیکی
+                    </small>
+                    <small class="fw-bold text-primary">۶۵٪</small>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 65%" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if project.description %}
+            <div class="project-description mb-3">
+                <h6 class="section-title text-secondary mb-2">
+                    <i class="fas fa-align-left me-2"></i>
+                    توضیحات
+                </h6>
+                <p class="small text-muted mb-0 description-text" style="line-height: 1.5;">
+                    {{ project.description|truncatechars:120 }}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Card Footer -->
+        <div class="card-footer bg-transparent border-top-0 pt-0">
+            <!-- Action Buttons -->
+            <div class="action-buttons mb-3">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{% url 'sooratvaziat:project_financial_report' project.pk %}" 
+                           class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-chart-line me-1"></i>
+                            گزارش مالی
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'sooratvaziat:session_list' project.pk %}" 
+                           class="btn btn-success btn-sm w-100">
+                            <i class="fas fa-clipboard-list me-1"></i>
+                            صورت جلسات
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'sooratvaziat:riz_metre_discipline_list' project.pk %}" 
+                           class="btn btn-info btn-sm w-100">
+                            <i class="fas fa-ruler-combined me-1"></i>
+                            ریز متره
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'sooratvaziat:riz_financial_discipline_list' project.pk %}" 
+                           class="btn btn-warning btn-sm w-100">
+                            <i class="fas fa-calculator me-1"></i>
+                            ریز مالی
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="project-metadata d-flex justify-content-between align-items-center pt-2 border-top">
+                <div class="user-info">
+                    <small class="text-muted">
+                        <i class="fas fa-user me-1"></i>
+                        {% if project.user.get_full_name %}
+                            {{ project.user.get_full_name }}
+                        {% else %}
+                            {{ project.user.username }}
+                        {% endif %}
+                    </small>
+                </div>
+                
+                <div class="date-info">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ project.updated_at|timesince }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.project-card {
+    transition: all 0.3s ease;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+}
+
+.project-card-inner {
+    border-radius: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.project-card-inner:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-bottom: 1px dashed #dee2e6;
+    padding-bottom: 0.3rem;
+}
+
+.description-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.action-buttons .btn {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+}
+
+.contract-info .row,
+.project-details .row {
+    margin: 0 -0.25rem;
+}
+
+.contract-info .col-12,
+.project-details .col-6 {
+    padding: 0 0.25rem;
+}
+
+.financial-summary .bg-light {
+    transition: all 0.2s ease;
+}
+
+.financial-summary .bg-light:hover {
+    background-color: #e9ecef !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .project-card {
+        margin-bottom: 1rem;
+    }
+    
+    .action-buttons .col-6 {
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects
+    const projectCards = document.querySelectorAll('.project-card');
+    
+    projectCards.forEach(card => {
+        // Add click animation
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown') && !e.target.closest('a')) {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            }
+        });
+
+        // Add tooltips for truncated text
+        const descriptionText = card.querySelector('.description-text');
+        if (descriptionText && descriptionText.scrollHeight > descriptionText.clientHeight) {
+            card.querySelector('.project-description').setAttribute('title', '{{ project.description }}');
+        }
+    });
+
+    // Add loading states for buttons
+    const actionButtons = document.querySelectorAll('.action-buttons a');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const originalHtml = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>در حال بارگذاری...';
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.innerHTML = originalHtml;
+                this.disabled = false;
+            }, 3000);
+        });
+    });
+});
+</script>

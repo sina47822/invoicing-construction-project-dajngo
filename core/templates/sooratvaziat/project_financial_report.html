@@ -1,500 +1,675 @@
-<!-- sooratvaziat\templates\project_financial_report.html -->
+{% extends 'layout/base.html' %}
 {% load humanize %}
 
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>گزارش مالی پروژه - {{ project.project_name }}</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            font-family: 'Tahoma', 'Arial', sans-serif;
-            background-color: #ffffff;
-            line-height: 1.6;
-        }
-        .header-section {
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            color: white;
-            padding: 2rem 0;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .project-info {
-            background-color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-            border-right: 5px solid #3498db;
-        }
-        .project-details {
-            background: linear-gradient(135deg, #8e44ad, #9b59b6);
-            color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .discipline-section {
-            background-color: white;
-            border-radius: 10px;
-            padding: 0;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-        .discipline-header {
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
-            color: white;
-            padding: 1rem 1.5rem;
-            margin: 0;
-        }
-        .table-responsive {
-            margin: 0;
-        }
-        .financial-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .financial-table th {
-            background-color: #ffffff;
-            color: #2c3e50;
-            font-weight: bold;
-            padding: 12px 15px;
-            border-bottom: 2px solid #dee2e6;
-            text-align: center;
-            vertical-align: middle;
-        }
-        .financial-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #dee2e6;
-            text-align: center;
-            vertical-align: middle;
-        }
-        .financial-table tr:hover {
-            background-color: #ffffff;
-        }
-        .chapter-row {
-            background-color: #e8f5e8 !important;
-            font-weight: bold;
-        }
-        .total-row {
-            background-color: #2c3e50 !important;
-            color: white;
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        .export-buttons {
-            margin-bottom: 2rem;
-        }
-        .summary-card {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .stats-card {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .action-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-top: 4px solid #3498db;
-            transition: transform 0.3s ease;
-        }
-        .action-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        .summary-card h5, .stats-card h5 {
-            margin-bottom: 0.5rem;
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-        .summary-card .number, .stats-card .number {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-        .badge-discipline {
-            background-color: #3498db;
-            font-size: 0.8em;
-            padding: 0.5em 1em;
-        }
-        .text-persian {
-            font-family: 'Tahoma', 'Arial', sans-serif;
-        }
-        .sticky-header {
-            position: sticky;
-            top: 0;
-            background-color: white;
-            z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 1rem 0;
-        }
-        .session-link {
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .session-link:hover {
-            transform: scale(1.05);
-        }
-        .user-profile-link {
-            color: #3498db;
-            text-decoration: none;
-            border-bottom: 1px dashed #3498db;
-        }
-        .user-profile-link:hover {
-            color: #2980b9;
-            border-bottom: 1px solid #2980b9;
-        }
-        @media print {
-            .export-buttons, .btn, .action-buttons {
-                display: none !important;
-            }
-            .discipline-section {
-                break-inside: avoid;
-                margin-bottom: 2rem;
-            }
-            body {
-                background-color: white !important;
-                font-size: 12px;
-            }
-            .header-section {
-                background: #2c3e50 !important;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container-fluid py-4">
-        <!-- Header Section -->
-        <div class="header-section text-center">
-            <div class="container">
-                <h1 class="display-5 fw-bold mb-3">
-                    <i class="fas fa-chart-line me-2"></i>
-                    گزارش مالی پروژه
-                </h1>
-                <h2 class="h3 mb-2">{{ project.project_name }}</h2>
-                <p class="lead mb-0">کد پروژه: {{ project.project_code }}</p>
-                <p class="mb-0">سال اجرا: {{ project.execution_year }}</p>
-            </div>
-        </div>
+{% block title %}گزارش مالی پروژه - {{ project.project_name }}{% endblock %}
 
-        <!-- Action Buttons -->
-        <div class="action-buttons mb-4">
-            <div class="row">
-                <div class="col-md-4">
-                    <a href="{% url 'riz_metre_discipline_list' project.id %}" class="session-link">
-                        <div class="action-card">
-                            <i class="fas fa-ruler-combined fa-3x text-primary mb-3"></i>
-                            <h5>ریز متره</h5>
-                            <p class="text-muted small">مشاهده جزئیات متره</p>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-4">
-                    <a href="{% url 'riz_financial_discipline_list' project.id %}" class="session-link">
-                        <div class="action-card">
-                            <i class="fas fa-calculator fa-3x text-success mb-3"></i>
-                            <h5>ریز مالی</h5>
-                            <p class="text-muted small">مشاهده جزئیات مالی</p>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-4">
-                    <a href="{% url 'sooratvaziat:session_list' project.id %}" class="session-link">
-                        <div class="action-card">
-                            <i class="fas fa-clipboard-list fa-3x text-warning mb-3"></i>
-                            <h5>صورت جلسات</h5>
-                            <p class="text-muted small">مشاهده همه جلسات</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Export Buttons -->
-        <div class="export-buttons text-center mb-4">
-            <div class="btn-group" role="group">
-                <a href="?export=xlsx" class="btn btn-success">
-                    <i class="fas fa-file-excel me-2"></i>خروجی Excel
-                </a>
-                <a href="?export=pdf" class="btn btn-danger">
-                    <i class="fas fa-file-pdf me-2"></i>خروجی PDF
-                </a>
-                <a href="javascript:window.print()" class="btn btn-secondary">
-                    <i class="fas fa-print me-2"></i>چاپ گزارش
-                </a>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="stats-card">
-                    <h5><i class="fas fa-layer-group me-2"></i>تعداد آیتم‌های فهرست بها</h5>
-                    <div class="number">{{ total_items_count }}</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stats-card">
-                    <h5><i class="fas fa-shapes me-2"></i>تعداد رشته‌ها</h5>
-                    <div class="number">{{ data_by_discipline|length }}</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="summary-card">
-                    <h5><i class="fas fa-money-bill-wave me-2"></i>جمع کل مبالغ (ریال)</h5>
-                    <div class="number">{{ formatted_grand_total_amount }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Project Details -->
-        <div class="project-details">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="mb-3">
-                        <i class="fas fa-building me-2"></i>اطلاعات قرارداد
-                    </h5>
-                    <p><strong>کارفرما:</strong> {{ project.employer }}</p>
-                    <p><strong>پیمانکار:</strong> {{ project.contractor }}</p>
-                    <p><strong>مدیر طرح/مشاور:</strong> {{ project.consultant|default:"-" }}</p>
-                    <p><strong>مهندس ناظر:</strong> {{ project.supervising_engineer|default:"-" }}</p>
-                </div>
-                <div class="col-md-6">
-                    <h5 class="mb-3">
-                        <i class="fas fa-file-contract me-2"></i>مشخصات قرارداد
-                    </h5>
-                    <p><strong>شماره قرارداد:</strong> {{ project.contract_number }}</p>
-                    <p><strong>تاریخ قرارداد:</strong> {{ contract_date_jalali }}</p>
-                    <p><strong>مبلغ قرارداد:</strong> {{ project.contract_amount|floatformat:0|intcomma }} ریال</p>
-                    <p><strong>محل پروژه:</strong> {{ project.city }} - {{ project.province }}</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Project Information -->
-        <div class="project-info">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-info-circle me-2"></i>اطلاعات پروژه
-                    </h5>
-                    <p><strong>نام پروژه:</strong> {{ project.project_name }}</p>
-                    <p><strong>کد پروژه:</strong> {{ project.project_code }}</p>
-                    <p><strong>سال اجرا:</strong> {{ project.execution_year }}</p>
-                    <p><strong>وضعیت:</strong> 
-                        <span class="badge {% if project.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
-                            {{ project.get_status_display }}
-                        </span>
-                    </p>
-                </div>
-                <div class="col-md-6">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-chart-pie me-2"></i>خلاصه مالی
-                    </h5>
-                    <p><strong>تعداد رشته‌ها:</strong> {{ data_by_discipline|length }}</p>
-                    <p><strong>تعداد آیتم‌ها:</strong> {{ total_items_count }}</p>
-                    <p><strong>جمع کل مبالغ:</strong> {{ formatted_grand_total_amount }} ریال</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Discipline Sections -->
-        {% for discipline, data in data_by_discipline.items %}
-        <div class="discipline-section">
-            <div class="discipline-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">
-                    <i class="fas fa-cube me-2"></i>
-                    {{ data.label }}
-                </h4>
-                <div>
-                    <span class="badge badge-discipline bg-light text-dark">
-                        سال: {{ data.year }}
-                    </span>
-                    <span class="badge badge-discipline bg-warning text-dark ms-2">
-                        آیتم‌ها: {{ data.items_count }}
-                    </span>
-                    <span class="badge badge-discipline bg-info text-dark ms-2">
-                        جمع مبلغ: {{ data.formatted_total_amount }} ریال
-                    </span>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="financial-table table table-striped table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th width="8%">شماره ردیف</th>
-                            <th width="10%">شماره آیتم</th>
-                            <th width="35%">شرح آیتم</th>
-                            <th width="8%">واحد</th>
-                            <th width="12%">جمع مقدار</th>
-                            <th width="12%">قیمت واحد (ریال)</th>
-                            <th width="15%">جمع ریالی (ریال)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in data.rows %}
-                        {% if row.is_new_chapter %}
-                        <tr class="chapter-row">
-                            <td colspan="7" class="text-center fw-bold">
-                                <i class="fas fa-folder me-2"></i>
-                                شروع فصل {{ row.chapter }}
-                            </td>
-                        </tr>
-                        {% endif %}
-                        <tr>
-                            <td class="fw-bold text-primary">{{ row.display_number }}</td>
-                            <td>{{ row.row_number }}</td>
-                            <td class="text-start">{{ row.pricelist_item.description }}</td>
-                            <td>{{ row.unit }}</td>
-                            <td class="fw-bold">{{ row.formatted_total_qty }}</td>
-                            <td>{{ row.formatted_unit_price }}</td>
-                            <td class="fw-bold text-success">{{ row.formatted_line_total }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                هیچ داده‌ای برای این رشته یافت نشد
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        
-                        <!-- Total Row for this discipline -->
-                        <tr class="total-row">
-                            <td colspan="4" class="text-start">
-                                <i class="fas fa-calculator me-2"></i>
-                                جمع کل {{ data.label }}
-                            </td>
-                            <td class="fw-bold">{{ data.items_count }}</td>
-                            <td>-</td>
-                            <td class="fw-bold">{{ data.formatted_total_amount }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Sessions Information -->
-            {% if data.sessions %}
-            <div class="p-3 bg-light">
-                <h6 class="text-muted mb-2">
-                    <i class="fas fa-clipboard-list me-2"></i>
-                    صورت جلسات رشته {{ data.label }}:
-                </h6>
-                <div class="d-flex flex-wrap gap-2">
-                    {% for session in data.sessions %}
-                    <a href="{% url 'detailed_session' session.id %}" class="text-decoration-none">
-                        <span class="badge bg-primary">
-                            <i class="fas fa-eye me-1"></i>
-                            جلسه {{ session.session_number }} - {{ session.session_date|date:"Y/m/d" }}
-                        </span>
-                    </a>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        {% empty %}
-        <div class="alert alert-warning text-center">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            هیچ داده مالی برای این پروژه یافت نشد.
-        </div>
-        {% endfor %}
-
-        <!-- Final Grand Total -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="alert alert-primary text-center">
-                    <h4 class="alert-heading">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        جمع نهایی کل پروژه
-                    </h4>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>تعداد کل آیتم‌ها:</strong>
-                            <span class="h5 me-2 text-success">{{ total_items_count }}</span>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>جمع کل مبالغ:</strong>
-                            <span class="h5 me-2 text-success">{{ formatted_grand_total_amount }} ریال</span>
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xxl-10 col-xl-11 col-lg-12">
+            <!-- Header Section -->
+            <div class="header-section text-center mb-5">
+                <div class="container">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="page-header-content bg-gradient-primary text-white rounded-3 p-5 shadow-lg">
+                                <h1 class="display-5 fw-bold mb-3">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    گزارش مالی پروژه
+                                </h1>
+                                <h2 class="h3 mb-2">{{ project.project_name }}</h2>
+                                <div class="d-flex justify-content-center gap-4 mt-3">
+                                    <span class="badge bg-light text-dark fs-6">
+                                        <i class="fas fa-hashtag me-1"></i>کد: {{ project.project_code }}
+                                    </span>
+                                    <span class="badge bg-light text-dark fs-6">
+                                        <i class="fas fa-calendar me-1"></i>سال: {{ project.execution_year }}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="text-center text-muted mt-5 pt-3 border-top">
-            <p class="small">
-                <i class="fas fa-clock me-1"></i>
-                تاریخ تولید گزارش: {% now "Y/m/d H:i" %}
-                |
-                <i class="fas fa-user me-1"></i>
-                کاربر: 
-                {% if request.user.get_full_name %}
-                    {{ request.user.get_full_name }}
-                {% else %}
-                    <a href="{% url 'admin:auth_user_change' request.user.id %}" class="user-profile-link" target="_blank">
-                        لطفاً پروفایل خود را تکمیل کنید
+            <!-- Action Buttons -->
+            <div class="action-buttons mb-5">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <a href="{% url 'sooratvaziat:riz_metre_discipline_list' project.pk %}" class="text-decoration-none">
+                            <div class="feature-card bg-white rounded-3 p-4 text-center shadow-sm h-100 hover-lift">
+                                <div class="icon-wrapper bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-ruler-combined fa-2x text-primary"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">ریز متره</h5>
+                                <p class="text-muted small mb-0">مشاهده جزئیات متره و مقادیر</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'sooratvaziat:riz_financial_discipline_list' project.pk %}" class="text-decoration-none">
+                            <div class="feature-card bg-white rounded-3 p-4 text-center shadow-sm h-100 hover-lift">
+                                <div class="icon-wrapper bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-calculator fa-2x text-success"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">ریز مالی</h5>
+                                <p class="text-muted small mb-0">مشاهده جزئیات مالی و محاسبات</p>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{% url 'sooratvaziat:session_list' project.pk %}" class="text-decoration-none">
+                            <div class="feature-card bg-white rounded-3 p-4 text-center shadow-sm h-100 hover-lift">
+                                <div class="icon-wrapper bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-clipboard-list fa-2x text-warning"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">صورت جلسات</h5>
+                                <p class="text-muted small mb-0">مشاهده همه جلسات و گزارش‌ها</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="export-buttons text-center mb-5">
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    <a href="?export=xlsx" class="btn btn-success btn-lg px-4 py-2 rounded-pill shadow-sm hover-lift">
+                        <i class="fas fa-file-excel me-2"></i>خروجی Excel
                     </a>
-                {% endif %}
-            </p>
+                    <a href="?export=pdf" class="btn btn-danger btn-lg px-4 py-2 rounded-pill shadow-sm hover-lift">
+                        <i class="fas fa-file-pdf me-2"></i>خروجی PDF
+                    </a>
+                    <a href="javascript:window.print()" class="btn btn-secondary btn-lg px-4 py-2 rounded-pill shadow-sm hover-lift">
+                        <i class="fas fa-print me-2"></i>چاپ گزارش
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-5 g-4">
+                <div class="col-md-4">
+                    <div class="stats-card bg-gradient-info text-white rounded-3 p-4 shadow-sm h-100">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-2 opacity-75">
+                                    <i class="fas fa-layer-group me-2"></i>تعداد آیتم‌های فهرست بها
+                                </h5>
+                                <div class="number display-6 fw-bold">{{ total_items_count }}</div>
+                            </div>
+                            <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-cubes fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card bg-gradient-warning text-white rounded-3 p-4 shadow-sm h-100">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-2 opacity-75">
+                                    <i class="fas fa-shapes me-2"></i>تعداد رشته‌ها
+                                </h5>
+                                <div class="number display-6 fw-bold">{{ data_by_discipline|length }}</div>
+                            </div>
+                            <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-project-diagram fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card bg-gradient-success text-white rounded-3 p-4 shadow-sm h-100">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-2 opacity-75">
+                                    <i class="fas fa-money-bill-wave me-2"></i>جمع کل مبالغ
+                                </h5>
+                                <div class="number display-6 fw-bold">{{ formatted_grand_total_amount }}</div>
+                                <small class="opacity-75">ریال</small>
+                            </div>
+                            <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-chart-bar fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Information Cards -->
+            <div class="row mb-5 g-4">
+                <!-- Contract Information -->
+                <div class="col-lg-6">
+                    <div class="info-card bg-white rounded-3 p-4 shadow-sm h-100">
+                        <div class="card-header border-0 bg-transparent p-0 mb-4">
+                            <h5 class="text-primary mb-0">
+                                <i class="fas fa-building me-2"></i>اطلاعات قرارداد
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="info-list">
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">کارفرما:</span>
+                                    <span class="fw-bold text-dark">{{ project.employer }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">پیمانکار:</span>
+                                    <span class="fw-bold text-dark">{{ project.contractor }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">مدیر طرح/مشاور:</span>
+                                    <span class="fw-bold text-dark">{{ project.consultant|default:"-" }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted">مهندس ناظر:</span>
+                                    <span class="fw-bold text-dark">{{ project.supervising_engineer|default:"-" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contract Details -->
+                <div class="col-lg-6">
+                    <div class="info-card bg-white rounded-3 p-4 shadow-sm h-100">
+                        <div class="card-header border-0 bg-transparent p-0 mb-4">
+                            <h5 class="text-primary mb-0">
+                                <i class="fas fa-file-contract me-2"></i>مشخصات قرارداد
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="info-list">
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">شماره قرارداد:</span>
+                                    <span class="fw-bold text-dark">{{ project.contract_number }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">تاریخ قرارداد:</span>
+                                    <span class="fw-bold text-dark">{{ contract_date_jalali }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">مبلغ قرارداد:</span>
+                                    <span class="fw-bold text-success">{{ project.contract_amount|floatformat:0|intcomma }} ریال</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted">محل پروژه:</span>
+                                    <span class="fw-bold text-dark">{{ project.city }} - {{ project.province }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Summary Cards -->
+            <div class="row mb-5 g-4">
+                <div class="col-lg-6">
+                    <div class="info-card bg-white rounded-3 p-4 shadow-sm h-100">
+                        <div class="card-header border-0 bg-transparent p-0 mb-4">
+                            <h5 class="text-primary mb-0">
+                                <i class="fas fa-info-circle me-2"></i>اطلاعات پروژه
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="info-list">
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">نام پروژه:</span>
+                                    <span class="fw-bold text-dark">{{ project.project_name }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">کد پروژه:</span>
+                                    <span class="fw-bold text-dark">{{ project.project_code }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">سال اجرا:</span>
+                                    <span class="fw-bold text-dark">{{ project.execution_year }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted">وضعیت:</span>
+                                    <span class="badge {% if project.status == 'active' %}bg-success{% else %}bg-secondary{% endif %} fs-6">
+                                        {{ project.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="info-card bg-white rounded-3 p-4 shadow-sm h-100">
+                        <div class="card-header border-0 bg-transparent p-0 mb-4">
+                            <h5 class="text-primary mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>خلاصه مالی
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="info-list">
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">تعداد رشته‌ها:</span>
+                                    <span class="fw-bold text-info">{{ data_by_discipline|length }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2 border-bottom">
+                                    <span class="text-muted">تعداد آیتم‌ها:</span>
+                                    <span class="fw-bold text-info">{{ total_items_count }}</span>
+                                </div>
+                                <div class="info-item d-flex justify-content-between align-items-center py-2">
+                                    <span class="text-muted">جمع کل مبالغ:</span>
+                                    <span class="fw-bold text-success">{{ formatted_grand_total_amount }} ریال</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discipline Sections -->
+            {% for discipline, data in data_by_discipline.items %}
+            <div class="discipline-section mb-5">
+                <div class="section-header bg-gradient-secondary text-white rounded-top-3 p-4 shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <h4 class="mb-0 fw-bold">
+                            <i class="fas fa-cube me-2"></i>
+                            {{ data.label }}
+                        </h4>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                                <i class="fas fa-calendar me-1"></i>سال: {{ data.year }}
+                            </span>
+                            <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                                <i class="fas fa-cubes me-1"></i>آیتم‌ها: {{ data.items_count }}
+                            </span>
+                            <span class="badge bg-info text-dark fs-6 px-3 py-2">
+                                <i class="fas fa-money-bill-wave me-1"></i>جمع مبلغ: {{ data.formatted_total_amount }} ریال
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container bg-white rounded-bottom-3 shadow-sm">
+                    <div class="table-responsive">
+                        <table class="financial-table table table-hover table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="8%" class="text-center py-3 border-bottom-0">شماره ردیف</th>
+                                    <th width="10%" class="text-center py-3 border-bottom-0">شماره آیتم</th>
+                                    <th width="35%" class="text-center py-3 border-bottom-0">شرح آیتم</th>
+                                    <th width="8%" class="text-center py-3 border-bottom-0">واحد</th>
+                                    <th width="12%" class="text-center py-3 border-bottom-0">جمع مقدار</th>
+                                    <th width="12%" class="text-center py-3 border-bottom-0">قیمت واحد (ریال)</th>
+                                    <th width="15%" class="text-center py-3 border-bottom-0">جمع ریالی (ریال)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data.rows %}
+                                {% if row.is_new_chapter %}
+                                <tr class="chapter-row bg-primary bg-opacity-10">
+                                    <td colspan="7" class="text-center fw-bold py-3">
+                                        <i class="fas fa-folder me-2 text-primary"></i>
+                                        شروع فصل {{ row.chapter }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                <tr class="hover-lift">
+                                    <td class="fw-bold text-primary text-center">{{ row.display_number }}</td>
+                                    <td class="text-center">{{ row.row_number }}</td>
+                                    <td class="text-start">{{ row.pricelist_item.description }}</td>
+                                    <td class="text-center">{{ row.unit }}</td>
+                                    <td class="fw-bold text-center">{{ row.formatted_total_qty }}</td>
+                                    <td class="text-center">{{ row.formatted_unit_price }}</td>
+                                    <td class="fw-bold text-success text-center">{{ row.formatted_line_total }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-5">
+                                        <i class="fas fa-exclamation-circle me-2 fa-2x mb-3 d-block"></i>
+                                        هیچ داده‌ای برای این رشته یافت نشد
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                <!-- Total Row for this discipline -->
+                                <tr class="total-row bg-dark text-white">
+                                    <td colspan="4" class="text-start fw-bold py-3">
+                                        <i class="fas fa-calculator me-2"></i>
+                                        جمع کل {{ data.label }}
+                                    </td>
+                                    <td class="fw-bold text-center">{{ data.items_count }}</td>
+                                    <td class="text-center">-</td>
+                                    <td class="fw-bold text-center">{{ data.formatted_total_amount }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Sessions Information -->
+                    {% if data.sessions %}
+                    <div class="sessions-section bg-light bg-opacity-50 p-4 border-top">
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            صورت جلسات رشته {{ data.label }}:
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for session in data.sessions %}
+                            <a href="{% url 'sooratvaziat:detailed_session' session.id %}" class="text-decoration-none">
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill hover-lift">
+                                    <i class="fas fa-eye me-1"></i>
+                                    جلسه {{ session.session_number }} - {{ session.session_date|date:"Y/m/d" }}
+                                </span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-warning text-center rounded-3 shadow-sm">
+                <i class="fas fa-exclamation-triangle me-2 fa-2x"></i>
+                <h5 class="mt-2 mb-1">هیچ داده مالی برای این پروژه یافت نشد.</h5>
+                <p class="mb-0">لطفاً اطلاعات مالی پروژه را وارد کنید.</p>
+            </div>
+            {% endfor %}
+
+            <!-- Final Grand Total -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="final-total-card bg-gradient-primary text-white rounded-3 p-5 text-center shadow-lg">
+                        <h4 class="alert-heading fw-bold mb-3">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            جمع نهایی کل پروژه
+                        </h4>
+                        <hr class="border-white opacity-50 my-4">
+                        <div class="row justify-content-center">
+                            <div class="col-md-5">
+                                <div class="total-item bg-white bg-opacity-20 rounded-3 p-3 mx-2">
+                                    <strong class="d-block mb-2 opacity-75">تعداد کل آیتم‌ها</strong>
+                                    <span class="h3 fw-bold text-warning">{{ total_items_count }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="total-item bg-white bg-opacity-20 rounded-3 p-3 mx-2">
+                                    <strong class="d-block mb-2 opacity-75">جمع کل مبالغ</strong>
+                                    <span class="h3 fw-bold text-warning">{{ formatted_grand_total_amount }} ریال</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center text-muted mt-5 pt-4 border-top">
+                <p class="small mb-0">
+                    <i class="fas fa-clock me-1"></i>
+                    تاریخ تولید گزارش: {% now "Y/m/d H:i" %}
+                    |
+                    <i class="fas fa-user me-1"></i>
+                    کاربر: 
+                    {% if request.user.get_full_name %}
+                        {{ request.user.get_full_name }}
+                    {% else %}
+                        <a href="{% url 'admin:auth_user_change' request.user.id %}" class="user-profile-link text-decoration-none" target="_blank">
+                            لطفاً پروفایل خود را تکمیل کنید
+                        </a>
+                    {% endif %}
+                </p>
+            </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Add some interactivity
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add smooth scrolling for print
-            if (window.location.hash === '#print') {
-                window.print();
+{% block extra_css %}
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    --info-gradient: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+    --warning-gradient: linear-gradient(135deg, #f39c12 0%, #e74c3c 100%);
+    --success-gradient: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+}
+
+body {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+    background-color: #f8f9fa;
+    line-height: 1.6;
+}
+
+/* Header Styles */
+.page-header-content {
+    background: var(--primary-gradient) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header-content::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.1);
+    transform: rotate(45deg);
+}
+
+/* Card Styles */
+.feature-card, .info-card, .stats-card, .summary-card {
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.feature-card:hover, .info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+}
+
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-primary { background: var(--primary-gradient) !important; }
+.bg-gradient-secondary { background: var(--secondary-gradient) !important; }
+.bg-gradient-info { background: var(--info-gradient) !important; }
+.bg-gradient-warning { background: var(--warning-gradient) !important; }
+.bg-gradient-success { background: var(--success-gradient) !important; }
+
+/* Table Styles */
+.financial-table th {
+    background-color: #f8f9fa !important;
+    color: #2c3e50;
+    font-weight: 700;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.financial-table td {
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+
+.financial-table tr:hover td {
+    background-color: #f8f9fa;
+}
+
+.chapter-row {
+    background-color: #e8f4f8 !important;
+    font-weight: 600;
+}
+
+.total-row {
+    background-color: #2c3e50 !important;
+    color: white;
+    font-weight: 700;
+}
+
+/* Badge Styles */
+.badge {
+    font-weight: 500;
+}
+
+/* Button Styles */
+.btn {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Section Headers */
+.section-header {
+    background: var(--secondary-gradient) !important;
+}
+
+/* Final Total Card */
+.final-total-card {
+    background: var(--primary-gradient) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.final-total-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.1);
+    transform: rotate(45deg);
+}
+
+/* Info List Styles */
+.info-list .info-item {
+    transition: background-color 0.2s ease;
+}
+
+.info-list .info-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* Icon Wrapper */
+.icon-wrapper {
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover .icon-wrapper {
+    transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .display-5 {
+        font-size: 1.8rem;
+    }
+    
+    .stats-card .display-6 {
+        font-size: 1.5rem;
+    }
+    
+    .btn-lg {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .action-buttons, .export-buttons, .btn {
+        display: none !important;
+    }
+    
+    .discipline-section {
+        break-inside: avoid;
+        margin-bottom: 2rem;
+    }
+    
+    body {
+        background-color: white !important;
+        font-size: 12px;
+    }
+    
+    .header-section {
+        background: #2c3e50 !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scrolling for print
+    if (window.location.hash === '#print') {
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    }
+
+    // Add confirmation for exports
+    const exportLinks = document.querySelectorAll('a[href*="export="]');
+    exportLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const type = this.href.includes('export=xlsx') ? 'Excel' : 'PDF';
+            if (!confirm(`آیا مایل به دریافت گزارش در قالب ${type} هستید؟`)) {
+                e.preventDefault();
+            } else {
+                // Show loading state
+                const originalHtml = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال آماده‌سازی...';
+                this.disabled = true;
+                
+                setTimeout(() => {
+                    this.innerHTML = originalHtml;
+                    this.disabled = false;
+                }, 3000);
             }
-
-            // Add confirmation for exports
-            const exportLinks = document.querySelectorAll('a[href*="export="]');
-            exportLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    const type = this.href.includes('export=xlsx') ? 'Excel' : 'PDF';
-                    if (!confirm(`آیا مایل به دریافت گزارش در قالب ${type} هستید؟`)) {
-                        e.preventDefault();
-                    }
-                });
-            });
-
-            // Add hover effects to session badges
-            const sessionBadges = document.querySelectorAll('.bg-primary.badge');
-            sessionBadges.forEach(badge => {
-                badge.addEventListener('mouseenter', function() {
-                    this.style.transform = 'scale(1.05)';
-                    this.style.transition = 'transform 0.2s ease';
-                });
-                badge.addEventListener('mouseleave', function() {
-                    this.style.transform = 'scale(1)';
-                });
-            });
         });
-    </script>
-</body>
-</html>
+    });
+
+    // Add hover effects to interactive elements
+    const interactiveElements = document.querySelectorAll('.hover-lift, .feature-card, .info-card');
+    interactiveElements.forEach(element => {
+        element.addEventListener('mouseenter', function() {
+            this.style.transition = 'all 0.3s ease';
+        });
+    });
+
+    // Add animation to stats cards on scroll
+    const observerOptions = {
+        threshold: 0.5,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe all cards for animation
+    const animatedCards = document.querySelectorAll('.stats-card, .summary-card, .feature-card');
+    animatedCards.forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.6s ease';
+        observer.observe(card);
+    });
+});
+</script>
+{% endblock %}

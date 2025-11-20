@@ -185,7 +185,7 @@
         <div class="action-buttons mb-4">
             <div class="row">
                 <div class="col-md-3">
-                    <a href="{% url 'riz_metre_discipline_list' project.id %}" class="session-link">
+                    <a href="{% url 'riz_metre_discipline_list' project.pk %}" class="session-link">
                         <div class="action-card">
                             <i class="fas fa-ruler-combined fa-3x text-primary mb-3"></i>
                             <h5>ریز متره</h5>
@@ -194,7 +194,7 @@
                     </a>
                 </div>
                 <div class="col-md-3">
-                    <a href="{% url 'sooratvaziat:session_list' project.id %}" class="session-link">
+                    <a href="{% url 'sooratvaziat:session_list' project.pk %}" class="session-link">
                         <div class="action-card">
                             <i class="fas fa-clipboard-list fa-3x text-warning mb-3"></i>
                             <h5>صورت جلسات</h5>
@@ -203,7 +203,7 @@
                     </a>
                 </div>
                 <div class="col-md-3">
-                    <a href="{% url 'project_financial_report' project.id %}" class="session-link">
+                    <a href="{% url 'project_financial_report' project.pk %}" class="session-link">
                         <div class="action-card">
                             <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
                             <h5>گزارش مالی</h5>
@@ -274,10 +274,10 @@
         <!-- Export Buttons -->
         <div class="export-buttons text-center mb-4">
             <div class="btn-group" role="group">
-                <a href="?export=xlsx{% if project %}&project_id={{ project.id }}{% if discipline_choice %}&discipline_choice={{ discipline_choice }}{% endif %}{% endif %}" class="btn btn-success">
+                <a href="?export=xlsx{% if project %}&project_id={{ project.pk }}{% if discipline_choice %}&discipline_choice={{ discipline_choice }}{% endif %}{% endif %}" class="btn btn-success">
                     <i class="fas fa-file-excel me-2"></i>خروجی Excel
                 </a>
-                <a href="?export=csv{% if project %}&project_id={{ project.id }}{% if discipline_choice %}&discipline_choice={{ discipline_choice }}{% endif %}{% endif %}" class="btn btn-info">
+                <a href="?export=csv{% if project %}&project_id={{ project.pk }}{% if discipline_choice %}&discipline_choice={{ discipline_choice }}{% endif %}{% endif %}" class="btn btn-info">
                     <i class="fas fa-file-csv me-2"></i>خروجی CSV
                 </a>
                 <a href="javascript:window.print()" class="btn btn-secondary">
