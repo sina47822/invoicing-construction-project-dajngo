@@ -10,7 +10,16 @@ from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
 from accounts.models import ProjectUser
 
-from jdatetime import datetime
+# Import jdatetime با مدیریت خطا
+try:
+    from jdatetime import datetime as jdatetime
+    from jdatetime import date as jdate
+    JALALI_AVAILABLE = True
+    print("✅ jdatetime successfully imported")
+except ImportError as e:
+    JALALI_AVAILABLE = False
+    print(f"❌ jdatetime import failed: {e}")
+    
 User = get_user_model()
 
 class ProjectCreateForm(forms.ModelForm):
@@ -666,13 +675,32 @@ class ProjectCreateForm(forms.ModelForm):
             province = self.instance.province
             if province in self.province_cities_data:
                 cities = self.province_cities_data[province]
-                # تبدیل به فرمت مناسب برای فیلد CharField با ویجت Select
+                # تنظیم choices برای ویجت Select
                 self.fields['city'].widget.choices = [('', 'انتخاب شهر')] + cities
                 self.fields['city'].widget.attrs.pop('disabled', None)
+                print(f"🏙️ City choices set for {province}: {[city[0] for city in cities]}")
 
     def get_province_cities_json(self):
         """دریافت داده‌های JSON برای جاوااسکریپت"""
         return json.dumps(self.province_cities_data)
+    
+    def clean_project_code(self):
+        """بررسی منحصر به فرد بودن کد پروژه"""
+        project_code = self.cleaned_data.get('project_code')
+        
+        if project_code:
+            # در حالت ویرایش، پروژه فعلی را از بررسی حذف کن
+            queryset = Project.objects.filter(project_code=project_code, is_active=True)
+            if self.instance and self.instance.pk:
+                queryset = queryset.exclude(pk=self.instance.pk)
+                
+            if queryset.exists():
+                raise ValidationError(
+                    f'کد پروژه "{project_code}" قبلاً استفاده شده است.',
+                    code='duplicate_code'
+                )
+        
+        return project_code
     
     def save(self, commit=True):
         """ذخیره فرم با مقادیر location"""
