@@ -1,0 +1,206 @@
+<!-- templates/sooratvaziat/session_form.html -->
+
+{% extends 'layout/project_base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>
+                    {{ title }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate id="session-form">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.session_number.id_for_label }}" class="form-label">
+                                    {{ form.session_number.label }}
+                                </label>
+                                {{ form.session_number }}
+                                {% if form.session_number.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.session_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">اگر خالی باشد، شماره به صورت خودکار تولید می‌شود</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.session_date.id_for_label }}" class="form-label">
+                                    {{ form.session_date.label }}
+                                </label>
+                                {{ form.session_date }}
+                                {% if form.session_date.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.session_date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- فیلتر و انتخاب فهرست بها -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.discipline_filter.id_for_label }}" class="form-label">
+                                    {{ form.discipline_filter.label }}
+                                </label>
+                                {{ form.discipline_filter }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.price_list.id_for_label }}" class="form-label">
+                                    {{ form.price_list.label }}
+                                </label>
+                                {{ form.price_list }}
+                                {% if form.price_list.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.price_list.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">ابتدا رشته را انتخاب کنید</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    {{ form.status.label }}
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.status.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="text-danger small">
+                            {% for error in form.description.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            {{ form.notes.label }}
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <div class="text-danger small">
+                            {% for error in form.notes.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'sooratvaziat:session_list' project.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right me-1"></i>
+                            بازگشت به لیست
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i>
+                            ذخیره صورت جلسه
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const disciplineFilter = document.getElementById('discipline-filter');
+    const priceListSelect = document.getElementById('price-list-select');
+    
+    // هنگام تغییر رشته
+    disciplineFilter.addEventListener('change', function() {
+        const discipline = this.value;
+        
+        // پاک کردن options فعلی
+        priceListSelect.innerHTML = '<option value="">-- لطفا منتظر بمانید --</option>';
+        priceListSelect.disabled = true;
+        
+        if (discipline) {
+            // درخواست AJAX برای دریافت فهرست‌های بها
+            fetch(`/sooratvaziat/get-price-lists/?discipline=${discipline}`)
+                .then(response => response.json())
+                .then(data => {
+                    priceListSelect.innerHTML = '<option value="">-- انتخاب فهرست بها --</option>';
+                    
+                    data.forEach(priceList => {
+                        const option = document.createElement('option');
+                        option.value = priceList.id;
+                        option.textContent = priceList.discipline + (priceList.year ? ` (${priceList.year})` : '');
+                        priceListSelect.appendChild(option);
+                    });
+                    
+                    priceListSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    priceListSelect.innerHTML = '<option value="">-- خطا در دریافت داده‌ها --</option>';
+                });
+        } else {
+            priceListSelect.innerHTML = '<option value="">-- ابتدا رشته را انتخاب کنید --</option>';
+            priceListSelect.disabled = true;
+        }
+    });
+    
+    // مقدار اولیه اگر در حالت edit هستیم
+    {% if form.instance.pk %}
+        const initialDiscipline = "{{ form.instance.price_list.discipline_choice }}";
+        if (initialDiscipline) {
+            disciplineFilter.value = initialDiscipline;
+            // تریگر کردن رویداد change
+            disciplineFilter.dispatchEvent(new Event('change'));
+        }
+    {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,210 @@
+<!-- templates/project/project_list.html -->
+
+{% extends 'layout/project_base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        {{ title }}
+                    </h5>
+                    <a href="{% url 'project:project_detail' project.pk %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>
+                        بازگشت به پروژه
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- فرم افزودن کاربر جدید -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user-plus me-2"></i>
+                            افزودن کاربر جدید به پروژه
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">کاربر *</label>
+                                        {{ form.user }}
+                                        {% if form.user.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.user.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">نقش *</label>
+                                        {{ form.role }}
+                                        {% if form.role.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.role.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">تاریخ شروع *</label>
+                                        {{ form.start_date }}
+                                        {% if form.start_date.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.start_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <label class="form-label">تاریخ پایان</label>
+                                        {{ form.end_date }}
+                                        {% if form.end_date.errors %}
+                                        <div class="text-danger small">
+                                            {% for error in form.end_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="mb-3">
+                                        <label class="form-label">اصلی</label>
+                                        <div class="form-check form-switch mt-2">
+                                            {{ form.is_primary }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    کاربران باید ابتدا در سیستم ایجاد شوند.
+                                    <a href="{% url 'project:user_create' %}">ایجاد کاربر جدید</a>
+                                </small>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-plus me-1"></i>
+                                    افزودن کاربر
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- لیست کاربران پروژه -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            کاربران فعلی پروژه
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if project_users %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>نام کاربری</th>
+                                            <th>نام کامل</th>
+                                            <th>نقش</th>
+                                            <th>وضعیت</th>
+                                            <th>تاریخ شروع</th>
+                                            <th>تاریخ پایان</th>
+                                            <th>اختصاص‌دهنده</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for project_user in project_users %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ project_user.user.username }}</strong>
+                                            </td>
+                                            <td>
+                                                {{ project_user.user.get_full_name|default:"-" }}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-dark">{{ project_user.get_role_display }}</span>
+                                                {% if project_user.is_primary %}
+                                                <span class="badge bg-primary">اصلی</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if project_user.is_current %}
+                                                    <span class="badge bg-success">فعال</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">منقضی</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ project_user.start_date_jalali }}</td>
+                                            <td>
+                                                {% if project_user.end_date %}
+                                                    {{ project_user.end_date_jalali }}
+                                                {% else %}
+                                                    <span class="text-muted">نامحدود</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small>{{ project_user.assigned_by.get_full_name|default:project_user.assigned_by.username }}</small>
+                                            </td>
+                                            <td>
+                                                <form method="post" action="{% url 'project:project_user_remove' project.pk project_user.pk %}" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                            onclick="return confirm('آیا از حذف این کاربر اطمینان دارید؟')">
+                                                        <i class="fas fa-trash"></i>
+                                                        حذف
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-users fa-2x mb-3"></i>
+                                <p>هنوز کاربری به این پروژه اضافه نشده است.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // فعال‌سازی datepicker برای تاریخ‌ها
+    $('.persian-datepicker').persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true
+    });
+});
+</script>
+{% endblock %}

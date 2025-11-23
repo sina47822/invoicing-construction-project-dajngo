@@ -33,12 +33,12 @@
                 </a>
                 <div class="collapse {% if 'project' in request.resolver_match.url_name %}show{% endif %}" id="projectsCollapse">
                     <nav class="nav flex-column ms-3 small">
-                        <a href="{% url 'sooratvaziat:project_list' %}" class="nav-link px-3 py-1 {% if request.resolver_match.url_name == 'project_list' %}active{% endif %}">
+                        <a href="{% url 'projects:project_list' %}" class="nav-link px-3 py-1 {% if request.resolver_match.url_name == 'project_list' %}active{% endif %}">
                             <i class="bi bi-list-ul me-1"></i>
                             <span class="d-none d-lg-inline">لیست پروژه‌ها</span>
                             <span class="d-lg-none">پروژه‌ها</span>
                         </a>
-                        <a href="{% url 'sooratvaziat:project_create' %}" class="nav-link px-3 py-1">
+                        <a href="{% url 'projects:project_create' %}" class="nav-link px-3 py-1">
                             <i class="bi bi-plus-circle me-1 text-success"></i>
                             <span class="d-none d-lg-inline">ایجاد پروژه</span>
                             <span class="d-lg-none">جدید</span>

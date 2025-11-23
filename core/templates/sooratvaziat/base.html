@@ -3,87 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}پروژه Django{% endblock %}</title>
+    <title>{% block title %}سامانه مدیریت متره و برآورد{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
+        :root {
+            --primary-color: #0047b3;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+
         body {
-            background-color: #f0f4ff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            font-family: 'Vazirmatn', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
             display: flex;
-            flex-direction: row-reverse; /* نوار سمت راست */
+            flex-direction: row-reverse;
         }
 
         /* Sidebar */
         .sidebar {
-            width: 250px;
-            background-color: #ffffff;
-            box-shadow: 0 0 10px rgba(0,0,0,0.08);
+            width: 280px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 2px 0 15px rgba(0,0,0,0.08);
             position: fixed;
             right: 0;
             top: 0;
             height: 100vh;
             padding: 1.5rem 1rem;
-            z-index: 10;
+            z-index: 1000;
             overflow-y: auto;
+            border-left: 1px solid #e9ecef;
         }
 
-        .sidebar h4 {
-            text-align: center;
+        .sidebar-brand {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 1.25rem;
+            padding: 0.5rem 0;
             margin-bottom: 1.5rem;
-            color: #0047b3;
-            font-weight: 600;
+            border-bottom: 2px solid #e9ecef;
         }
 
-        .sidebar a {
-            display: block;
-            text-decoration: none;
-            color: #333;
-            padding: 0.6rem 0.8rem;
-            border-radius: 6px;
-            transition: 0.2s;
+        .sidebar .nav-link {
+            color: #495057;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.25rem;
+            transition: all 0.3s ease;
             font-weight: 500;
+            display: flex;
+            align-items: center;
         }
 
-        .sidebar a:hover {
-            background-color: #e6f0ff;
-            color: #0047b3;
+        .sidebar .nav-link:hover {
+            background-color: #e3f2fd;
+            color: var(--primary-color);
+            transform: translateX(-5px);
         }
 
-        .sidebar .active {
-            background-color: #4d94ff;
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #0066ff);
             color: white;
+            box-shadow: 0 4px 12px rgba(0, 71, 179, 0.3);
+        }
+
+        .sidebar .nav-link i {
+            margin-left: 0.75rem;
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .nav-link .badge {
+            margin-right: auto;
+            font-size: 0.7rem;
         }
 
         /* Main content area */
         main {
             flex-grow: 1;
-            margin-right: 250px; /* فاصله از نوبار راست */
-            padding: 2rem;
+            margin-right: 280px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Navbar Top for User Actions */
+        /* Topbar */
         .topbar {
-            background-color: #ffffff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
             padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 999;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .topbar a {
-            color: #4d94ff;
+        .topbar-brand {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 1.5rem;
             text-decoration: none;
-            font-weight: 500;
-            margin-right: 1rem;
         }
 
-        .topbar a:hover {
-            text-decoration: underline;
+        .topbar-brand:hover {
+            color: var(--primary-color);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), #0066ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .user-role {
+            font-size: 0.875rem;
+            color: var(--secondary-color);
+        }
+
+        /* Content Area */
+        .content-wrapper {
+            flex: 1;
+            padding: 2rem;
+            background-color: #f8fafc;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                width: 300px;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            main {
+                margin-right: 0;
+            }
+
+            .topbar {
+                padding: 1rem;
+            }
+        }
+
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #003d99;
+        }
+
+        /* Section headers in sidebar */
+        .sidebar-section {
+            margin: 1.5rem 0 0.5rem 0;
+            padding: 0 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Dropdown in sidebar */
+        .sidebar-dropdown {
+            margin-bottom: 0.25rem;
+        }
+
+        .sidebar-dropdown .nav-link {
+            position: relative;
+        }
+
+        .sidebar-dropdown .nav-link::after {
+            content: '\f282';
+            font-family: 'bootstrap-icons';
+            margin-right: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-dropdown .nav-link.collapsed::after {
+            transform: rotate(-90deg);
+        }
+
+        .sidebar-dropdown-menu {
+            margin: 0.5rem 0 0.5rem 1rem;
+            border-right: 2px solid #e9ecef;
+        }
+
+        .sidebar-dropdown-menu .nav-link {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.125rem;
+        }
+
+        /* Mobile menu button */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -91,49 +259,274 @@
 <body>
 
     <!-- Sidebar -->
-    <aside class="sidebar">
-        <h4>منوی پروژه‌ها</h4>
-        <a href="{% url 'accounts:dashboard' %}" class="active">داشبورد</a>
-        <a href="{% url 'riz_metre_discipline_list' project_id=1 %}">ریز متره (لیست رشته)</a>
-        <a href="{% url 'riz_metre' project_id=1 discipline_choice='some_choice' %}">ریز متره</a>
-        <a href="{% url 'riz_financial_discipline_list' project_id=1 %}">ریز مالی (لیست رشته)</a>
-        <a href="{% url 'riz_financial' project_id=1 discipline_choice='some_choice' %}">ریز مالی</a>
-        <a href="{% url 'sooratjalase' project_id=1 %}">صورت جلسه</a>
-        <a href="{% url 'session_list' project_id=1 %}">لیست جلسات</a>
-        <a href="{% url 'detailed_session' session_id=1 %}">جزئیات جلسه</a>
-        <a href="{% url 'project_financial_report' project_id=1 %}">گزارش مالی پروژه</a>
-        <a href="{% url 'sooratvaziat:project_financial_report_list' %}">لیست پروژه ها</a>
-        <hr>
-        {% if user.is_authenticated %}
-            <a href="{% url 'profile' %}">پروفایل من</a>
-            <a href="{% url 'accounts:settings' %}">تنظیمات حساب</a>
-            <a href="{% url 'logout' %}">خروج</a>
-        {% else %}
-            <a href="{% url 'login' %}">ورود</a>
-            <a href="{% url 'register' %}">ثبت‌نام</a>
-        {% endif %}
+    <aside class="sidebar" id="sidebar">
+        <!-- Brand -->
+        <div class="sidebar-brand">
+            <i class="bi bi-calculator-fill me-2"></i>
+            سامانه متره و برآورد
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav flex-column">
+            <!-- Dashboard -->
+            <a href="{% url 'accounts:dashboard' %}" 
+               class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i>
+                <span>داشبورد</span>
+            </a>
+
+            <!-- Projects Section -->
+            <div class="sidebar-section">پروژه‌ها</div>
+            
+            <a href="{% url 'projects:project_list' %}" 
+               class="nav-link {% if request.resolver_match.url_name == 'project_list' %}active{% endif %}">
+                <i class="bi bi-building"></i>
+                <span>لیست پروژه‌ها</span>
+            </a>
+
+            <a href="{% url 'projects:project_create' %}" 
+               class="nav-link {% if request.resolver_match.url_name == 'project_create' %}active{% endif %}">
+                <i class="bi bi-plus-circle"></i>
+                <span>ایجاد پروژه جدید</span>
+            </a>
+
+            <!-- Sessions Section -->
+            <div class="sidebar-section">صورت جلسات</div>
+            
+            <div class="sidebar-dropdown">
+                <a href="#sessionsCollapse" 
+                   class="nav-link {% if 'session' in request.resolver_match.url_name %}active{% endif %}" 
+                   data-bs-toggle="collapse" 
+                   data-bs-target="#sessionsCollapse">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>مدیریت جلسات</span>
+                </a>
+                <div class="collapse {% if 'session' in request.resolver_match.url_name %}show{% endif %}" id="sessionsCollapse">
+                    <div class="sidebar-dropdown-menu">
+                        <a href="{% url 'projects:project_list' %}" class="nav-link">
+                            <i class="bi bi-list-check"></i>
+                            <span>لیست جلسات</span>
+                        </a>
+                        <a href="{% url 'projects:project_list' %}" class="nav-link">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>جلسه جدید</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div class="sidebar-section">گزارش‌ها و متره</div>
+
+            <!-- Financial Reports -->
+            <div class="sidebar-dropdown">
+                <a href="#financialCollapse" 
+                   class="nav-link {% if 'financial' in request.resolver_match.url_name %}active{% endif %}" 
+                   data-bs-toggle="collapse" 
+                   data-bs-target="#financialCollapse">
+                    <i class="bi bi-graph-up"></i>
+                    <span>گزارش‌های مالی</span>
+                </a>
+                <div class="collapse {% if 'financial' in request.resolver_match.url_name %}show{% endif %}" id="financialCollapse">
+                    <div class="sidebar-dropdown-menu">
+                        <a href="{% url 'sooratvaziat:project_financial_report_list' %}" 
+                           class="nav-link {% if request.resolver_match.url_name == 'project_financial_report_list' %}active{% endif %}">
+                            <i class="bi bi-file-bar-graph"></i>
+                            <span>گزارش‌های مالی</span>
+                        </a>
+                        <a href="{% url 'projects:project_list' %}" class="nav-link">
+                            <i class="bi bi-calculator"></i>
+                            <span>ریز مالی پروژه‌ها</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Measurements -->
+            <div class="sidebar-dropdown">
+                <a href="#measurementsCollapse" 
+                   class="nav-link {% if 'riz_metre' in request.resolver_match.url_name %}active{% endif %}" 
+                   data-bs-toggle="collapse" 
+                   data-bs-target="#measurementsCollapse">
+                    <i class="bi bi-rulers"></i>
+                    <span>ریز متره‌ها</span>
+                </a>
+                <div class="collapse {% if 'riz_metre' in request.resolver_match.url_name %}show{% endif %}" id="measurementsCollapse">
+                    <div class="sidebar-dropdown-menu">
+                        <a href="{% url 'projects:project_list' %}" class="nav-link">
+                            <i class="bi bi-table"></i>
+                            <span>ریز متره پروژه‌ها</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Section -->
+            <div class="sidebar-section">سیستم</div>
+
+            <!-- Settings -->
+            <div class="sidebar-dropdown">
+                <a href="#settingsCollapse" 
+                   class="nav-link" 
+                   data-bs-toggle="collapse" 
+                   data-bs-target="#settingsCollapse">
+                    <i class="bi bi-gear"></i>
+                    <span>تنظیمات</span>
+                </a>
+                <div class="collapse" id="settingsCollapse">
+                    <div class="sidebar-dropdown-menu">
+                        <a href="{% url 'accounts:settings' %}" class="nav-link">
+                            <i class="bi bi-person-gear"></i>
+                            <span>پروفایل کاربری</span>
+                        </a>
+                        <a href="#" class="nav-link">
+                            <i class="bi bi-sliders"></i>
+                            <span>تنظیمات سیستم</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help -->
+            <a href="#" class="nav-link">
+                <i class="bi bi-question-circle"></i>
+                <span>راهنما</span>
+            </a>
+
+            <!-- Divider -->
+            <hr class="my-3">
+
+            <!-- User Section -->
+            <div class="sidebar-section">حساب کاربری</div>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:logout' %}" class="nav-link text-danger">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>خروج از سیستم</span>
+                </a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="nav-link">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>ورود به سیستم</span>
+                </a>
+                <a href="{% url 'accounts:register' %}" class="nav-link">
+                    <i class="bi bi-person-plus"></i>
+                    <span>ثبت‌نام</span>
+                </a>
+            {% endif %}
+
+            <!-- Version -->
+            <div class="mt-4 pt-3 border-top text-center">
+                <small class="text-muted">نسخه ۱.۰.۰</small>
+            </div>
+        </nav>
     </aside>
 
-    <!-- Topbar -->
-    <div class="topbar">
-        <div><h5 class="m-0">سامانه مدیریت پروژه‌ها</h5></div>
-        <div>
-            {% if user.is_authenticated %}
-                <span class="me-2">{{ user.get_full_name|default:user.username }}</span>
-                <a href="{% url 'logout' %}">خروج</a>
-            {% else %}
-                <a href="{% url 'login' %}">ورود</a>
-                <a href="{% url 'register' %}">ثبت‌نام</a>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Content -->
+    <!-- Main Content -->
     <main>
-        {% block content %}{% endblock %}
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="d-flex align-items-center">
+                <!-- Mobile menu button -->
+                <button class="mobile-menu-btn me-3" id="mobileMenuBtn">
+                    <i class="bi bi-list"></i>
+                </button>
+                
+                <a href="{% url 'accounts:dashboard' %}" class="topbar-brand">
+                    <i class="bi bi-calculator-fill me-2"></i>
+                    سامانه مدیریت متره و برآورد
+                </a>
+            </div>
+
+            <div class="user-info">
+                {% if user.is_authenticated %}
+                    <div class="user-details text-end">
+                        <div class="user-name">
+                            {{ user.get_full_name|default:user.username }}
+                        </div>
+                        <div class="user-role">
+                            {% if user.is_superuser %}
+                                مدیر سیستم
+                            {% else %}
+                                کاربر
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="user-avatar">
+                        {{ user.get_full_name|default:user.username|first|upper }}
+                    </div>
+                {% else %}
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">ورود</a>
+                        <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">ثبت‌نام</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            {% block content %}
+            <!-- Main content will be inserted here -->
+            {% endblock %}
+        </div>
     </main>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Mobile menu functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+
+            if (mobileMenuBtn && sidebar) {
+                mobileMenuBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('show');
+                });
+
+                // Close sidebar when clicking outside on mobile
+                document.addEventListener('click', function(event) {
+                    if (window.innerWidth <= 768) {
+                        if (!sidebar.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+                            sidebar.classList.remove('show');
+                        }
+                    }
+                });
+            }
+
+            // Auto-close sidebar on mobile after navigation
+            const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('show');
+                    }
+                });
+            });
+
+            // Handle resize events
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+
+        // Add active class to current page links
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUrl = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar .nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentUrl) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

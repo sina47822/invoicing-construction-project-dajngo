@@ -28,18 +28,18 @@
                     </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a class="dropdown-item" href="{% url 'sooratvaziat:project_detail' project.pk %}">
+                            <a class="dropdown-item" href="{% url 'projects:project_detail' project.pk %}">
                                 <i class="fas fa-eye me-2"></i>مشاهده جزئیات
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{% url 'sooratvaziat:project_edit' project.pk %}">
+                            <a class="dropdown-item" href="{% url 'projects:project_edit' project.pk %}">
                                 <i class="fas fa-edit me-2"></i>ویرایش پروژه
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item text-danger" href="{% url 'sooratvaziat:project_delete' project.pk %}">
+                            <a class="dropdown-item text-danger" href="{% url 'projects:project_delete' project.pk %}">
                                 <i class="fas fa-trash me-2"></i>حذف پروژه
                             </a>
                         </li>

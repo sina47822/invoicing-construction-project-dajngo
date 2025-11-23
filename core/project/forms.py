@@ -8,8 +8,11 @@ import json
 from datetime import datetime
 from jalali_date.fields import JalaliDateField
 from jalali_date.widgets import AdminJalaliDateWidget
+from accounts.models import ProjectUser
 
+from jdatetime import datetime
 User = get_user_model()
+
 class ProjectCreateForm(forms.ModelForm):
     """
     فرم سفارشی برای ایجاد پروژه با پشتیبانی از تاریخ جلالی
@@ -111,6 +114,7 @@ class ProjectCreateForm(forms.ModelForm):
         required=True,
         label='شهر'
     )
+
     # توضیحات
     description = forms.CharField(
         widget=Textarea(attrs={
@@ -121,17 +125,60 @@ class ProjectCreateForm(forms.ModelForm):
         required=False,
         label='توضیحات پروژه'
     )
+    # New fields for user assignment
+    employer_user = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        widget=Select(attrs={'class': 'form-select'}),
+        label='کاربر کارفرما'
+    )
     
+    employer_user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=Select(attrs={
+            'class': 'form-select',
+            'data-role': 'employer'
+        }),
+        label='کاربر کارفرما'
+    )
+    
+    project_manager_user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=Select(attrs={
+            'class': 'form-select',
+            'data-role': 'project_manager'
+        }),
+        label='کاربر مدیر طرح'
+    )
+    
+    consultant_user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=Select(attrs={
+            'class': 'form-select',
+            'data-role': 'consultant'
+        }),
+        label='کاربر مشاور'
+    )
+    
+    supervising_engineer_user = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        required=False,
+        widget=Select(attrs={
+            'class': 'form-select',
+            'data-role': 'supervisor'
+        }),
+        label='کاربر ناظر'
+    )
+     
     class Meta:
         model = Project
         fields = [
             'project_name',
             'project_code',
             'project_type',
-            'employer',
-            'contractor',
-            'consultant',
-            'supervising_engineer',
             'contract_number',
             'contract_date',
             'execution_year',
@@ -157,28 +204,6 @@ class ProjectCreateForm(forms.ModelForm):
                 'required': True,
                 'autocomplete': 'off'
             }),
-            'employer': TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'نام کامل کارفرما (مثال: شهرداری تهران)',
-                'maxlength': 255,
-                'required': True
-            }),
-            'contractor': TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'نام پیمانکار (مثال: شرکت عمران آتی)',
-                'maxlength': 255,
-                'required': True
-            }),
-            'consultant': TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'نام مدیر طرح یا مشاور (اختیاری)',
-                'maxlength': 255
-            }),
-            'supervising_engineer': TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'نام مهندس ناظر (اختیاری)',
-                'maxlength': 255
-            }),
             'contract_number': TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'شماره قرارداد (مثال: 1403/001)',
@@ -193,20 +218,10 @@ class ProjectCreateForm(forms.ModelForm):
             'project_type': Select(attrs={
                 'class': 'form-select'
             }),
-            'contract_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date',
-                'autocomplete': 'off',
-                'placeholder': '1403-06-15'
-            }),
         }
         labels = {
             'project_name': 'نام پروژه',
             'project_code': 'کد پروژه',
-            'employer': 'کارفرما',
-            'contractor': 'پیمانکار',
-            'consultant': 'مدیر طرح/مشاور',
-            'supervising_engineer': 'مهندس ناظر',
             'contract_number': 'شماره قرارداد',
             'contract_amount': 'مبلغ قرارداد (ریال)',
             'contract_file': 'فایل قرارداد',
@@ -215,35 +230,28 @@ class ProjectCreateForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop('current_user', None)
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)        
         
         # تنظیم کشور پیش‌فرض
         self.fields['country'].initial = 'ایران'
-        self.fields['province'].initial = ''
-        self.fields['city'].initial = ''
-        # تنظیم تاریخ امروز به شمسی
+        
         # تنظیم سال اجرا به امسال
         try:
-            from jdatetime import datetime as jdatetime
             current_year = jdatetime.now().year
             self.fields['execution_year'].initial = current_year
-            print(f"✅ سال اجرا تنظیم شد: {current_year}")
         except ImportError:
-            current_year = 1404  # مقدار پیش‌فرض
-            self.fields['execution_year'].initial = current_year
+            current_year = 1404
+            self.fields['execution_year'].initial = current_year        
         
-        # تنظیم تاریخ امروز
+        # تنظیم تاریخ امروز برای فرم ایجاد
         if not self.instance.pk and not self.data:
             try:
-                from jdatetime import datetime as jdatetime
                 today = jdatetime.now()
                 self.initial['contract_date'] = today.strftime('%Y/%m/%d')
-                print(f"✅ تاریخ امروز تنظیم شد: {today.strftime('%Y/%m/%d')}")
             except ImportError:
-                from datetime import datetime
                 today = datetime.now()
                 self.initial['contract_date'] = today.strftime('%Y/%m/%d')
-        
+
         # محدود کردن انتخاب سال
         self.fields['execution_year'].choices = [
             (year, f"{year} (سال {year})") 
@@ -252,6 +260,35 @@ class ProjectCreateForm(forms.ModelForm):
         
         # تنظیم گزینه‌های استان و شهر
         self.set_location_choices()
+        
+        # اگر در حالت ویرایش هستیم و شهر داریم، آن را تنظیم کن
+        if self.instance and self.instance.pk and self.instance.city:
+            self.set_city_choices_based_on_province()
+            # تنظیم مقدار اولیه برای شهر
+            self.fields['city'].initial = self.instance.city
+        # تنظیم queryset برای فیلدهای کاربر
+        active_users = User.objects.filter(is_active=True)
+        self.fields['employer_user'].queryset = active_users
+        self.fields['project_manager_user'].queryset = active_users
+        self.fields['consultant_user'].queryset = active_users
+        self.fields['supervising_engineer_user'].queryset = active_users
+        
+        if self.instance and self.instance.pk:
+            self.set_initial_users()
+    
+    def set_initial_users(self):
+        """تنظیم کاربران فعلی برای حالت ویرایش"""
+        project_users = ProjectUser.objects.filter(project=self.instance)
+        
+        for project_user in project_users:
+            if project_user.role == 'employer':
+                self.fields['employer_user'].initial = project_user.user
+            elif project_user.role == 'project_manager':
+                self.fields['project_manager_user'].initial = project_user.user
+            elif project_user.role == 'consultant':
+                self.fields['consultant_user'].initial = project_user.user
+            elif project_user.role == 'supervisor':
+                self.fields['supervising_engineer_user'].initial = project_user.user            
     
     def set_location_choices(self):
         """تنظیم گزینه‌های استان و شهر"""
@@ -292,8 +329,7 @@ class ProjectCreateForm(forms.ModelForm):
             ('کهگیلویه و بویراحمد', 'کهگیلویه و بویراحمد'),
         ]
 
-        self.fields['province'].choices = provinces
-        self.fields['province'].initial = ''
+        self.fields['province'].choices = [('', 'انتخاب استان')] + provinces
     
         # شهرهای هر استان (می‌توانید از دیتابیس بخوانید)
         cities_by_province = {
@@ -623,7 +659,17 @@ class ProjectCreateForm(forms.ModelForm):
 
         # ذخیره برای استفاده در جاوااسکریپت
         self.province_cities_data = cities_by_province
-    
+
+    def set_city_choices_based_on_province(self):
+        """تنظیم گزینه‌های شهر بر اساس استان انتخاب شده"""
+        if self.instance and self.instance.province:
+            province = self.instance.province
+            if province in self.province_cities_data:
+                cities = self.province_cities_data[province]
+                # تبدیل به فرمت مناسب برای فیلد CharField با ویجت Select
+                self.fields['city'].widget.choices = [('', 'انتخاب شهر')] + cities
+                self.fields['city'].widget.attrs.pop('disabled', None)
+
     def get_province_cities_json(self):
         """دریافت داده‌های JSON برای جاوااسکریپت"""
         return json.dumps(self.province_cities_data)
@@ -631,11 +677,62 @@ class ProjectCreateForm(forms.ModelForm):
     def save(self, commit=True):
         """ذخیره فرم با مقادیر location"""
         instance = super().save(commit=False)
+
+        if self.current_user:
+            instance.created_by = self.current_user
+            instance.modified_by = self.current_user        
         
         if commit:
             instance.save()
-        
+            
+            # مدیریت کاربر پیمانکار (کاربر جاری)
+            ProjectUser.objects.get_or_create(
+                project=instance,
+                user=self.current_user,
+                role='contractor',
+                defaults={
+                    'is_primary': True,
+                    'assigned_by': self.current_user
+                }
+            )
+            # مدیریت سایر کاربران
+            self.manage_project_users(instance)
+
+        if self.current_user:
+            instance.created_by = self.current_user
+            instance.modified_by = self.current_user        
+     
         return instance
+    
+    def manage_project_users(self, project):
+        """مدیریت کاربران پروژه"""
+        role_user_mapping = {
+            'employer_user': 'employer',
+            'project_manager_user': 'project_manager', 
+            'consultant_user': 'consultant',
+            'supervising_engineer_user': 'supervisor',
+        }
+        
+        for form_field, role in role_user_mapping.items():
+            user = self.cleaned_data.get(form_field)
+            
+            # حذف کاربران قبلی با این نقش
+            ProjectUser.objects.filter(
+                project=project, 
+                role=role
+            ).exclude(user=user).delete()
+            
+            # اگر کاربر جدید انتخاب شده، اضافه کن
+            if user:
+                ProjectUser.objects.update_or_create(
+                    project=project,
+                    user=user,
+                    role=role,
+                    defaults={
+                        'assigned_by': self.current_user,
+                        'is_active': True
+                    }
+                )
 
     def clean_project_code(self):
         """بررسی منحصر به فرد بودن کد پروژه"""
@@ -704,6 +801,7 @@ class ProjectCreateForm(forms.ModelForm):
         raise ValidationError('سال اجرا الزامی است.')
     
         # **اصلاح اصلی: clean_contract_date**
+    
     def clean_contract_date(self):
         """تبدیل تاریخ شمسی به میلادی"""
         jalali_date_str = self.cleaned_data.get('contract_date')
@@ -757,6 +855,26 @@ class ProjectCreateForm(forms.ModelForm):
                     'contractor': 'کارفرما و پیمانکار نمی‌توانند یکسان باشند.'
                 }) 
         return cleaned_data
+    
+    def save(self, commit=True):
+        """ذخیره فرم"""
+        instance = super().save(commit=False)
+        
+        if self.current_user:
+            instance.created_by = self.current_user
+            instance.modified_by = self.current_user        
+        
+        if commit:
+            instance.save()
+            # ایجاد رکورد ProjectUser برای پیمانکار
+            ProjectUser.objects.create(
+                project=instance,
+                user=self.current_user,
+                role='contractor',
+                is_primary=True,
+                assigned_by=self.current_user
+            )        
+        return instance
 
 class ProjectEditForm(forms.ModelForm):
     """
@@ -880,7 +998,8 @@ class ProjectEditForm(forms.ModelForm):
         required=False,
         label='فایل جدید قرارداد (اختیاری)'
     )
-    
+
+
     class Meta:
         model = Project
         fields = [
@@ -978,15 +1097,14 @@ class ProjectEditForm(forms.ModelForm):
         # **پشتیبانی از پارامترهای اضافی**
         self.current_user = kwargs.pop('current_user', None)
         self.original_project = kwargs.pop('original_project', None)  # اضافه کردن این خط
-        self.instance = kwargs.get('instance')
+    
+        # Call parent __init__ first to set up self.fields
+        super().__init__(*args, **kwargs)
         
         # **بررسی اینکه instance و original_project یکی باشند**
         if self.original_project and self.instance:
-            if self.original_project != self.instance:
-                print(f"⚠️ هشدار: original_project و instance متفاوت هستند")
-        
-        super().__init__(*args, **kwargs)
-        
+            # Your existing logic here
+            pass        
         # **تنظیمات خاص برای ویرایش**
         if self.instance:
             # تنظیم مقادیر location از instance
@@ -1011,10 +1129,7 @@ class ProjectEditForm(forms.ModelForm):
         # **مخفی کردن فیلد contract_file در رندر**
         self.fields['contract_file'].widget = forms.HiddenInput()
         self.fields['contract_file'].required = False
-        
-        # **تنظیم نمایش فایل فعلی**
-        self.set_current_file_display()
-    
+
     def set_location_from_instance(self):
         """تنظیم مقادیر location از instance موجود"""
         if self.instance:
@@ -1100,23 +1215,6 @@ class ProjectEditForm(forms.ModelForm):
         ]
 
         self.fields['province'].choices = provinces
-        
-        # **تنظیم شهرها بر اساس استان انتخاب شده**
-        if self.instance and self.instance.province:
-            province = self.instance.province
-            cities = self.get_cities_by_province()
-            if province in cities:
-                city_choices = [('', 'انتخاب شهر')] + cities[province]
-                self.fields['city'].widget = forms.Select(
-                    choices=city_choices,
-                    attrs={
-                        'class': 'form-select',
-                        'id': 'id_city',
-                        'name': 'city'
-                    }
-                )
-                # تنظیم مقدار اولیه شهر
-                self.fields['city'].initial = self.instance.city
     
     def get_cities_by_province(self):
         """دریافت داده‌های شهرهای هر استان"""
@@ -1448,7 +1546,42 @@ class ProjectEditForm(forms.ModelForm):
     def save(self, commit=True):
         """ذخیره فرم با مدیریت فایل جدید"""
         instance = super().save(commit=False)
+        if self.current_user:
+            instance.created_by = self.current_user
+            instance.modified_by = self.current_user        
         
+        if commit:
+            instance.save()
+            
+            # Assign the current user as contractor
+            ProjectUser.objects.create(
+                project=instance,
+                user=self.current_user,
+                role='contractor',
+                is_primary=True,
+                assigned_by=self.current_user
+            )
+            
+            # Assign employer user if selected
+            employer_user = self.cleaned_data.get('employer_user')
+            if employer_user:
+                ProjectUser.objects.create(
+                    project=instance,
+                    user=employer_user,
+                    role='employer',
+                    assigned_by=self.current_user
+                )
+            
+            # Assign project manager user if selected
+            project_manager_user = self.cleaned_data.get('project_manager_user')
+            if project_manager_user:
+                ProjectUser.objects.create(
+                    project=instance,
+                    user=project_manager_user,
+                    role='project_manager',
+                    assigned_by=self.current_user
+                )
+
         # **مدیریت فایل جدید قرارداد**
         contract_file_new = self.cleaned_data.get('contract_file_new')
         if contract_file_new:
@@ -1658,3 +1791,224 @@ class ProjectEditForm(forms.ModelForm):
             instance.modified_by = self.current_user
             instance.save()
         return instance
+
+class ProjectUserAssignmentForm(forms.ModelForm):
+    """
+    فرم اختصاص کاربر به پروژه
+    """
+    class Meta:
+        model = ProjectUser
+        fields = ['user', 'role', 'is_primary', 'start_date', 'end_date']
+        widgets = {
+            'user': Select(attrs={'class': 'form-select'}),
+            'role': Select(attrs={'class': 'form-select'}),
+            'is_primary': CheckboxInput(attrs={'class': 'form-check-input'}),
+            'start_date': forms.TextInput(attrs={
+                'class': 'form-control persian-datepicker',
+                'placeholder': 'تاریخ شروع',
+                'autocomplete': 'off',
+                'readonly': 'readonly',
+            }),
+            'end_date': forms.TextInput(attrs={
+                'class': 'form-control persian-datepicker',
+                'placeholder': 'تاریخ پایان (اختیاری)',
+                'autocomplete': 'off',
+                'readonly': 'readonly',
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.project = kwargs.pop('project', None)
+        self.current_user = kwargs.pop('current_user', None)
+        super().__init__(*args, **kwargs)
+        
+        # فیلتر نقش‌های قابل اختصاص
+        self.fields['role'].queryset = ProjectRole.objects.filter(is_active=True)
+        
+        # فیلتر کاربران (به جز کاربر جاری)
+        self.fields['user'].queryset = User.objects.filter(
+            is_active=True
+        ).exclude(
+            pk=self.current_user.pk if self.current_user else None
+        )
+        
+        # تنظیم تاریخ شروع به امروز
+        if not self.instance.pk:
+            try:
+                from jdatetime import datetime as jdatetime
+                today = jdatetime.now()
+                self.initial['start_date'] = today.strftime('%Y/%m/%d')
+            except ImportError:
+                self.initial['start_date'] = timezone.now().date()
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        user = cleaned_data.get('user')
+        role = cleaned_data.get('role')
+        is_primary = cleaned_data.get('is_primary')
+        
+        if user and role and self.project:
+            # بررسی تکراری نبودن
+            existing = ProjectUser.objects.filter(
+                project=self.project,
+                user=user,
+                role=role,
+                is_active=True
+            ).exclude(pk=self.instance.pk if self.instance else None)
+            
+            if existing.exists():
+                raise ValidationError('این کاربر با این نقش قبلاً به پروژه اضافه شده است.')
+            
+            # اگر نقش اصلی است، بررسی کن که فقط یک نقش اصلی از این نوع وجود داشته باشد
+            if is_primary:
+                primary_exists = ProjectUser.objects.filter(
+                    project=self.project,
+                    role=role,
+                    is_primary=True,
+                    is_active=True
+                ).exclude(pk=self.instance.pk if self.instance else None)
+                
+                if primary_exists.exists():
+                    raise ValidationError(f'یک {role.get_name_display()} اصلی دیگر برای این پروژه وجود دارد.')
+        
+        return cleaned_data
+    
+    def clean_start_date(self):
+        """تبدیل تاریخ شمسی به میلادی"""
+        jalali_date_str = self.cleaned_data.get('start_date')
+        return self._convert_jalali_to_gregorian(jalali_date_str)
+    
+    def clean_end_date(self):
+        """تبدیل تاریخ شمسی به میلادی"""
+        jalali_date_str = self.cleaned_data.get('end_date')
+        if jalali_date_str:
+            return self._convert_jalali_to_gregorian(jalali_date_str)
+        return None
+    
+    def _convert_jalali_to_gregorian(self, jalali_date_str):
+        """تبدیل تاریخ شمسی به میلادی"""
+        if not jalali_date_str:
+            return None
+        
+        try:
+            from jdatetime import date as jdate
+            import re
+            
+            numbers = re.findall(r'\d+', jalali_date_str)
+            if len(numbers) < 3:
+                raise ValidationError('فرمت تاریخ صحیح نیست.')
+            
+            year, month, day = map(int, numbers[:3])
+            jalali_date = jdate(year, month, day)
+            return jalali_date.togregorian()
+            
+        except (ValueError, AttributeError, Exception) as e:
+            raise ValidationError('تاریخ وارد شده معتبر نیست.')
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.project = self.project
+        
+        if self.current_user and not instance.assigned_by:
+            instance.assigned_by = self.current_user
+        
+        if commit:
+            instance.save()
+        
+        return instance
+
+class UserCreateForm(forms.ModelForm):
+    """
+    فرم ایجاد کاربر جدید توسط پیمانکار
+    """
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'رمز عبور'
+        }),
+        label='رمز عبور'
+    )
+    
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'تکرار رمز عبور'
+        }),
+        label='تکرار رمز عبور'
+    )
+    
+    phone_number = forms.CharField(
+        max_length=15,
+        required=False,
+        widget=TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '09xxxxxxxxx'
+        }),
+        label='شماره تلفن'
+    )
+    
+    company_name = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'نام شرکت یا سازمان'
+        }),
+        label='نام شرکت/سازمان'
+    )
+    
+    position = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'سمت'
+        }),
+        label='سمت'
+    )
+    
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email']
+        widgets = {
+            'username': TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'نام کاربری'
+            }),
+            'first_name': TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'نام'
+            }),
+            'last_name': TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'نام خانوادگی'
+            }),
+            'email': TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'ایمیل'
+            }),
+        }
+    
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise ValidationError("رمزهای عبور مطابقت ندارند")
+        return password2
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        
+        if commit:
+            user.save()
+            # ایجاد پروفایل کاربر
+            UserProfile.objects.create(
+                user=user,
+                phone_number=self.cleaned_data.get('phone_number'),
+                company_name=self.cleaned_data.get('company_name'),
+                position=self.cleaned_data.get('position')
+            )
+        
+        return user
+

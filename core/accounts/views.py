@@ -26,7 +26,22 @@ def dashboard(request):
 
 @login_required
 def profile_view(request):
-    return render(request, 'accounts/profile/profile.html')
+    """
+    پروفایل کاربر
+    """
+    # دریافت پروژه‌های کاربر
+    user_projects = Project.objects.filter(
+        project_users__user=request.user,
+        project_users__is_active=True,
+        is_active=True
+    ).distinct().select_related('created_by')
+    
+    context = {
+        'title': 'پروفایل کاربری',
+        'user_projects': user_projects,
+    }
+    
+    return render(request, 'accounts/profile/profile.html', context)
 
 @login_required
 def settings_view(request):

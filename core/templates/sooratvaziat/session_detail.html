@@ -1,0 +1,511 @@
+<!-- templates/sooratvaziat/session_detail.html -->
+
+{% extends 'layout/project_base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- اطلاعات اصلی صورت جلسه -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    اطلاعات صورت جلسه
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">شماره صورت جلسه:</th>
+                        <td><strong>{{ session.session_number }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>تاریخ:</th>
+                        <td>{{ session.session_date_jalali|default:"تعیین نشده" }}</td>
+                    </tr>
+                    <tr>
+                        <th>رشته:</th>
+                        <td>
+                            <span class="badge bg-secondary">
+                                {{ session.get_discipline_choice_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>وضعیت:</th>
+                        <td>
+                            {% if session.status == 'approved' %}
+                                <span class="badge bg-success">تایید شده</span>
+                            {% elif session.status == 'submitted' %}
+                                <span class="badge bg-warning">ارسال شده</span>
+                            {% else %}
+                                <span class="badge bg-secondary">پیش نویس</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>تعداد آیتم‌ها:</th>
+                        <td><span class="badge bg-info">{{ session.items_count }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>تاریخ ایجاد:</th>
+                        <td>{{ session.created_at|date:"Y/m/d H:i" }}</td>
+                    </tr>
+                </table>
+
+                {% if session.description %}
+                <div class="mt-3">
+                    <strong>توضیحات:</strong>
+                    <p class="text-muted">{{ session.description }}</p>
+                </div>
+                {% endif %}
+
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'sooratvaziat:session_edit' project.pk session.pk %}" 
+                       class="btn btn-warning btn-sm">
+                        <i class="fas fa-edit me-1"></i>
+                        ویرایش صورت جلسه
+                    </a>
+                    <a href="{% url 'sooratvaziat:session_list' project.pk %}" 
+                       class="btn btn-secondary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>
+                        بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- آمار کلی -->
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    آمار کلی
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <h4 class="text-primary">{{ session_stats.total_items }}</h4>
+                        <small class="text-muted">تعداد آیتم‌ها</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h4 class="text-success">{{ session_stats.unique_pricelists }}</h4>
+                        <small class="text-muted">فهرست‌های مختلف</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لیست آیتم‌های صورت جلسه -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    آیتم‌های صورت جلسه
+                </h5>
+                <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    <i class="fas fa-plus me-1"></i>
+                    افزودن آیتم
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- در قسمت نمایش آیتم‌ها -->
+                {% if grouped_items %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ردیف فهرست</th>
+                                    <th>شرح آیتم</th>
+                                    <th>شرح ردیف</th>
+                                    <th>ابعاد</th>
+                                    <th>تعداد</th>
+                                    <th>مقدار</th>
+                                    <th>واحد</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <!-- در قسمت نمایش آیتم‌ها در تمپلیت -->
+                            {% for group in grouped_items %}
+                                {% for sub_row in group.sub_rows %}
+                                    {% for item_data in sub_row.items %}
+                                    <tr data-item-id="{{ item_data.instance.pk }}">
+                                        <td><strong>{{ group.row_number }}</strong></td>
+                                        <td>{{ group.description }}</td>
+                                        <td>{{ item_data.row_description }}</td>
+                                        <td>
+                                            {% if item_data.length or item_data.width or item_data.height %}
+                                                {{ item_data.length|default:0 }} × 
+                                                {{ item_data.width|default:0 }} × 
+                                                {{ item_data.height|default:0 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ item_data.count }}</td>
+                                        <td>
+                                            <strong>{{ item_data.quantity }}</strong>
+                                        </td>
+                                        <td>{{ group.unit }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <!-- دکمه ویرایش آیتم -->
+                                                <button class="btn btn-outline-warning btn-sm edit-item-btn" 
+                                                        title="ویرایش"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editItemModal"
+                                                        data-item-id="{{ item_data.instance.pk }}"
+                                                        data-pricelist-item-id="{{ item_data.instance.pricelist_item.pk }}"
+                                                        data-row-description="{{ item_data.row_description }}"
+                                                        data-length="{{ item_data.length|default:'' }}"
+                                                        data-width="{{ item_data.width|default:'' }}"
+                                                        data-height="{{ item_data.height|default:'' }}"
+                                                        data-count="{{ item_data.count|default:1 }}"
+                                                        data-weight="{{ item_data.weight|default:'' }}"
+                                                        data-notes="{{ item_data.notes|default:'' }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                
+                                                <!-- دکمه حذف آیتم -->
+                                                <button class="btn btn-outline-danger btn-sm delete-item-btn" 
+                                                        title="حذف"
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteItemModal"
+                                                        data-item-id="{{ item_data.instance.pk }}"
+                                                        data-item-description="{{ item_data.row_description }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>هنوز آیتمی به این صورت جلسه اضافه نشده است.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                            <i class="fas fa-plus me-1"></i>
+                            افزودن آیتم
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal افزودن آیتم جدید -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">افزودن آیتم جدید</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'sooratvaziat:add_session_item' project.pk session.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">آیتم فهرست بها *</label>
+                                <select name="pricelist_item" class="form-select" required id="pricelist-select">
+                                    <option value="">-- انتخاب کنید --</option>
+                                    {% for item in pricelist_items %}
+                                        <option value="{{ item.pk }}" 
+                                                data-unit="{{ item.unit }}"
+                                                data-description="{{ item.description }}"
+                                                data-price="{{ item.price }}">
+                                            {{ item.row_number }} - {{ item.description }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">شرح ردیف *</label>
+                                <input type="text" name="row_description" class="form-control" 
+                                       placeholder="مثال: دیوار شمالی - طبقه اول" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">طول (متر)</label>
+                                <input type="number" step="0.01" name="length" class="form-control" 
+                                       placeholder="0.00" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">عرض (متر)</label>
+                                <input type="number" step="0.01" name="width" class="form-control" 
+                                       placeholder="0.00" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">ارتفاع (متر)</label>
+                                <input type="number" step="0.01" name="height" class="form-control" 
+                                       placeholder="0.00" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">تعداد *</label>
+                                <input type="number" step="0.01" name="count" class="form-control" 
+                                       value="1" required min="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">وزن (کیلوگرم)</label>
+                                <input type="number" step="0.01" name="weight" class="form-control" 
+                                       placeholder="0.00" value="0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">یادداشت</label>
+                                <textarea name="notes" class="form-control" rows="2" 
+                                          placeholder="یادداشت‌های مربوط به این ردیف"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary">ذخیره آیتم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal ویرایش آیتم -->
+<div class="modal fade" id="editItemModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ویرایش آیتم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="" id="edit-item-form">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">آیتم فهرست بها *</label>
+                                <select name="pricelist_item" class="form-select" required id="edit-pricelist-item">
+                                    <option value="">-- انتخاب کنید --</option>
+                                    {% for item in pricelist_items %}
+                                        <option value="{{ item.pk }}" 
+                                                data-unit="{{ item.unit }}"
+                                                data-description="{{ item.description }}">
+                                            {{ item.row_number }} - {{ item.description }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">شرح ردیف *</label>
+                                <input type="text" name="row_description" class="form-control" 
+                                       id="edit-row-description" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">طول (متر)</label>
+                                <input type="number" step="0.01" name="length" class="form-control" 
+                                       id="edit-length">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">عرض (متر)</label>
+                                <input type="number" step="0.01" name="width" class="form-control" 
+                                       id="edit-width">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">ارتفاع (متر)</label>
+                                <input type="number" step="0.01" name="height" class="form-control" 
+                                       id="edit-height">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">تعداد *</label>
+                                <input type="number" step="0.01" name="count" class="form-control" 
+                                       id="edit-count" required min="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">وزن (کیلوگرم)</label>
+                                <input type="number" step="0.01" name="weight" class="form-control" 
+                                       id="edit-weight">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">یادداشت</label>
+                                <textarea name="notes" class="form-control" rows="2" 
+                                          id="edit-notes" placeholder="یادداشت‌های مربوط به این ردیف"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal حذف آیتم -->
+<div class="modal fade" id="deleteItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تایید حذف آیتم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف آیتم "<span id="delete-item-description"></span>" اطمینان دارید؟</p>
+                <p class="text-warning"><small>این عمل قابل بازگشت نیست.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <form method="post" action="" id="delete-item-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">حذف آیتم</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// مدیریت رویدادهای ویرایش و حذف آیتم‌ها
+document.addEventListener('DOMContentLoaded', function() {
+    // ویرایش آیتم
+    const editButtons = document.querySelectorAll('.edit-item-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            const pricelistItemId = this.dataset.pricelistItemId;
+            const rowDescription = this.dataset.rowDescription;
+            const length = this.dataset.length;
+            const width = this.dataset.width;
+            const height = this.dataset.height;
+            const count = this.dataset.count;
+            const weight = this.dataset.weight;
+            const notes = this.dataset.notes;
+            
+            console.log('Editing item data:', {
+                itemId, pricelistItemId, rowDescription, 
+                length, width, height, count, weight, notes
+            });
+            
+            // تنظیم action فرم
+            document.getElementById('edit-item-form').action = 
+                "{% url 'sooratvaziat:edit_session_item' project.pk session.pk 0 %}".replace('0', itemId);
+            
+            // پر کردن فرم با داده‌های موجود
+            document.getElementById('edit-pricelist-item').value = pricelistItemId || '';
+            document.getElementById('edit-row-description').value = rowDescription || '';
+            document.getElementById('edit-length').value = length || '';
+            document.getElementById('edit-width').value = width || '';
+            document.getElementById('edit-height').value = height || '';
+            document.getElementById('edit-count').value = count || '1';
+            document.getElementById('edit-weight').value = weight || '';
+            document.getElementById('edit-notes').value = notes || '';
+            
+            // دیباگ: نمایش مقادیر پر شده
+            console.log('Form values after filling:', {
+                pricelist_item: document.getElementById('edit-pricelist-item').value,
+                row_description: document.getElementById('edit-row-description').value,
+                length: document.getElementById('edit-length').value,
+                width: document.getElementById('edit-width').value,
+                height: document.getElementById('edit-height').value,
+                count: document.getElementById('edit-count').value,
+                weight: document.getElementById('edit-weight').value,
+                notes: document.getElementById('edit-notes').value
+            });
+        });
+    });
+    
+    // حذف آیتم
+    const deleteButtons = document.querySelectorAll('.delete-item-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            const itemDescription = this.dataset.itemDescription;
+            
+            console.log('Deleting item:', itemId, itemDescription);
+            
+            // تنظیم action فرم
+            document.getElementById('delete-item-form').action = 
+                "{% url 'sooratvaziat:delete_session_item' project.pk session.pk 0 %}".replace('0', itemId);
+            
+            // نمایش شرح آیتم
+            document.getElementById('delete-item-description').textContent = itemDescription;
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editButtons = document.querySelectorAll('.edit-item-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            console.log('Button clicked - Data attributes:');
+            console.log('item-id:', this.dataset.itemId);
+            console.log('pricelist-item-id:', this.dataset.pricelistItemId);
+            console.log('pricelist-text:', this.dataset.pricelistText);
+            console.log('row-description:', this.dataset.rowDescription);
+            console.log('length:', this.dataset.length);
+            console.log('width:', this.dataset.width);
+            console.log('height:', this.dataset.height);
+            console.log('count:', this.dataset.count);
+            console.log('weight:', this.dataset.weight);
+            console.log('notes:', this.dataset.notes);
+        });
+    });
+});
+</script>
+{% endblock %}

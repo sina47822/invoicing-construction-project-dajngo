@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 class Project(models.Model):
     # وضعیت‌های پروژه
     STATUS_CHOICES = [
+        ('draft', _('پیش‌نویس')),
         ('active', _('فعال')),
         ('in_progress', _('در حال اجرا')),
         ('under_review', _('در حال بررسی')),
@@ -29,12 +30,13 @@ class Project(models.Model):
         ('mechanical', _('مکانیکی')),
         ('other', _('سایر')),
     ]
-    user = models.ForeignKey(
+    # کاربر ایجادکننده (معمولاً پیمانکار اصلی)
+    created_by = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
-        related_name='projects',
-        verbose_name=_('کاربر'),
-        limit_choices_to={'is_staff': False}  # فقط کاربران عادی
+        related_name='created_projects',
+        verbose_name=_('ایجادکننده'),
+        help_text=_('کاربری که این پروژه را ایجاد کرده است')
     )
     
     # اطلاعات اصلی پروژه
@@ -220,45 +222,94 @@ class Project(models.Model):
             models.Index(fields=['execution_year', 'is_active']),
             models.Index(fields=['city', 'province', 'is_active']),
         ]
+        permissions = [
+            ("can_assign_roles", "Can assign roles to projects"),
+            ("can_manage_all_projects", "Can manage all projects"),
+            ("can_view_all_projects", "Can view all projects"),
+        ]
 
     def __str__(self):
         return f"{self.project_name} - {self.project_code}"
-    
-    def save(self, *args, **kwargs):
-        """Override save برای مدیریت وضعیت"""
-        from django.utils import timezone
-        
-        # **استخراج user از kwargs اگر وجود دارد**
-        user = kwargs.pop('user', None)
-        
-        # تنظیم modified_by
-        if not self.pk:  # ایجاد جدید
-            self.modified_by = user or self.user
-        else:
-            # برای آپدیت، از user دریافتی یا مقدار قبلی استفاده کن
-            self.modified_by = user or self.modified_by
-        
-        # مدیریت حذف نرم
-        if self.pk:
-            try:
-                old_instance = Project.objects.get(pk=self.pk)
-                if not self.is_active and self.is_active != old_instance.is_active:
-                    self.deleted_at = timezone.now()
-            except Project.DoesNotExist:
-                pass
-        
-        # پاک کردن deleted_at هنگام فعال‌سازی
-        if self.is_active:
-            self.deleted_at = None
-        
-        # **فراخوانی صحیح super().save() بدون user در kwargs**
-        super().save(*args, **kwargs)
 
+        # متدهای دسترسی
+    def get_contractor(self):
+        """دریافت پیمانکار اصلی پروژه"""
+        return self.project_users.filter(
+            role='contractor', 
+            is_primary=True, 
+            is_active=True
+        ).first()
+    
+    def get_employer(self):
+        """دریافت کارفرمای پروژه"""
+        return self.project_users.filter(
+            role='employer', 
+            is_primary=True, 
+            is_active=True
+        ).first()
+    
+    def get_project_manager(self):
+        """دریافت مدیر طرح پروژه"""
+        return self.project_users.filter(
+            role='project_manager', 
+            is_primary=True, 
+            is_active=True
+        ).first()
+
+    def get_all_users_by_role(self, role):
+        """دریافت تمام کاربران با نقش خاص"""
+        return self.project_users.filter(role=role, is_active=True)
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('project:project_detail', kwargs={'pk': self.pk})
+    
+    def has_access(self, user, required_roles=None):
+        """
+        بررسی دسترسی کاربر به پروژه
+        required_roles: لیست نقش‌های مورد نیاز (اختیاری)
+        """
+        if user.is_superuser:
+            return True
+            
+        if required_roles is None:
+            required_roles = ['contractor', 'project_manager', 'employer', 'supervisor']
+        
+        # بررسی آیا کاربر در این پروژه نقشی دارد
+        return self.project_users.filter(
+            user=user, 
+            role__in=required_roles,
+            is_active=True
+        ).exists()
+    
+    def can_edit(self, user):
+        """آیا کاربر می‌تواند پروژه را ویرایش کند؟"""
+        if user.is_superuser:
+            return True
+            
+        # پیمانکار و مدیر طرح می‌توانند ویرایش کنند
+        return self.project_users.filter(
+            user=user,
+            role__in=['contractor', 'project_manager'],
+            is_active=True
+        ).exists()    
+    
+    def can_edit_measurements(self, user):
+        """آیا کاربر می‌تواند متره را ویرایش کند؟"""
+        if user.is_superuser:
+            return True
+            
+        user_assignment = self.project_users.filter(
+            user=user,
+            is_active=True
+        ).first()
+        
+        return user_assignment and user_assignment.role.can_edit_measurements
     
     @property
     def is_soft_deleted(self):
         """بررسی حذف نرم"""
-        return not self.is_active and self.deleted_at is not None
+        return not self.is_active and self.deleted_at is not None    
     
     @property
     def display_status(self):
@@ -273,18 +324,13 @@ class Project(models.Model):
     
     def delete(self, hard_delete=False, **kwargs):
         """حذف نرم به طور پیش‌فرض"""
-        
         from django.utils import timezone
         if hard_delete or not self.is_active:
-            # حذف کامل
-            from django.utils import timezone
-            self.deleted_at = timezone.now()
             super().delete(**kwargs)
         else:
-            # حذف نرم
             self.is_active = False
             self.deleted_at = timezone.now()
-            self.save(update_fields=['is_active', 'deleted_at'])
+            self.save()
 
 class StatusReport(models.Model):
     """
@@ -392,19 +438,6 @@ class StatusReport(models.Model):
     def __str__(self):
         return f"صورت وضعیت {self.report_number} - {self.get_discipline_display()} - {self.project.project_code}"
     
-    def save(self, *args, **kwargs):
-        """Override save"""
-        user = kwargs.pop('user', None)
-        if user:
-            self.modified_by = user
-        
-        # به‌روزرسانی مبلغ پروژه
-        if self.approval_status == 'approved':
-            self.project.amount = self.amount
-            self.project.save(update_fields=['amount'])
-        
-        super().save(*args, **kwargs)
-    
     @property
     def year(self):
         """سال صورت وضعیت"""
@@ -423,3 +456,4 @@ class StatusReport(models.Model):
             is_active=True
         ).exclude(pk=self.pk).exists():
             raise ValidationError('این شماره صورت وضعیت قبلاً استفاده شده است.')
+

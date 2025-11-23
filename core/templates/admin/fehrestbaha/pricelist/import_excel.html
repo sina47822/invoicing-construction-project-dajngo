@@ -1,0 +1,38 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div id="content-main">
+    <h1>وارد کردن آیتم‌ها از فایل اکسل</h1>
+    
+    <div class="module">
+        <h2>فهرست بها: {{ price_list }}</h2>
+        
+        <div class="form-row">
+            <p><strong>راهنما:</strong></p>
+            <ul>
+                <li>فایل اکسل باید شامل ستون‌های زیر باشد:</li>
+                <li><code>شماره ردیف</code> - شماره ردیف در فهرست بها</li>
+                <li><code>شرح</code> - شرح کامل آیتم</li>
+                <li><code>قیمت واحد (ریال)</code> - قیمت واحد به ریال</li>
+                <li><code>واحد</code> - واحد اندازه‌گیری</li>
+                <li><code>ستاره‌دار</code> - اختیاری (بله/خیر)</li>
+            </ul>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="excel_file">انتخاب فایل اکسل:</label>
+                <input type="file" name="excel_file" accept=".xlsx, .xls" required>
+            </div>
+            
+            <div class="submit-row">
+                <input type="submit" value="وارد کردن داده‌ها" class="default">
+                <a href="{% url 'admin:fehrestbaha_pricelist_changelist' %}" class="button">انصراف</a>
+                <a href="{% url 'admin:fehrestbaha_pricelist_download_sample' %}" class="button">دانلود فایل نمونه</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

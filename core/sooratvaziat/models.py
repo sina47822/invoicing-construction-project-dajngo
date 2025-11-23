@@ -11,8 +11,10 @@ from django.db.models import Sum, Count, Q
 from collections import OrderedDict
 import jdatetime
 import logging
-
+from fehrestbaha.models import PriceList , PriceListItem
+from accounts.models import ProjectRole
 logger = logging.getLogger(__name__)
+from django.utils.translation import gettext_lazy as _
 
 class DetailedMeasurement(models.Model):
     price_list_item = models.OneToOneField(PriceListItem, on_delete=models.CASCADE, related_name='detailed_measurement')
@@ -58,15 +60,15 @@ class MeasurementSession(models.Model):
     session_date = models.DateField(
         verbose_name="تاریخ صورت‌جلسه",
         help_text="تاریخ برگزاری صورت‌جلسه",
-        null=True,  # اضافه کردن null=True برای داده‌های موجود
+        null=True, 
         blank=True
     )
-    discipline_choice = models.CharField(
-        max_length=2, 
-        choices=DisciplineChoices.choices, 
-        verbose_name="رشته فعالیت",
-        help_text="نوع فهرست بها (ابنیه، مکانیک، برق، ...)",
-        default='01'  # مقدار پیش‌فرض
+    price_list = models.ForeignKey(
+        PriceList,
+        on_delete=models.PROTECT,
+        related_name='measurement_sessions',
+        verbose_name="فهرست بها مرتبط",
+        help_text="فهرست بهایی که این صورت جلسه بر اساس آن است"
     )
     
     # اطلاعات توصیفی
@@ -135,19 +137,30 @@ class MeasurementSession(models.Model):
     )
     
     history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = "صورت جلسه"
+        verbose_name_plural = "صورت جلسات"
+        ordering = ['-session_date', '-created_at']
+
     def __str__(self):
-        return f"صورت جلسه شماره {self.session_number} برای پروژه {self.project.project_code}"
+        return f"صورت جلسه شماره {self.session_number} - {self.price_list} برای پروژه {self.project.project_code}"
     
+    @property
+    def discipline_choice(self):
+        """سازگاری با کدهای قدیمی - رشته را از price_list می‌گیرد"""
+        return self.price_list.discipline_choice if self.price_list else None
+
     def save(self, *args, **kwargs):
-        """Override save ساده‌شده"""
+        """Override save"""
         user = kwargs.pop('user', None)
         
         if not self.created_by:
             self.created_by = user or getattr(self, 'created_by', None)
         self.modified_by = user or getattr(self, 'modified_by', None)
         
-        # فقط ذخیره کنید - بقیه کارها با سیگنال‌ها انجام میشه
-        super().save(*args, **kwargs)
+        super().save(*args, **kwargs)    
+
     # ========== METODS FOR REPORTING ==========
     
     def get_items_grouped_by_pricelist(self):
@@ -216,27 +229,14 @@ class MeasurementSession(models.Model):
             for sub_key, sub_group in group['sub_rows'].items():
                 formatted_sub_rows.append({
                     'description': sub_key,
-                    'items_count': len(sub_group['items']),
+                    'items': sub_group['items'],
+                    'items_count': len(sub_group['items']),  # اینجا items_count را دارید
                     'sub_total_quantity': sub_group['sub_total_quantity'].quantize(Decimal('0.00')),
                     'sub_total_amount': sub_group['sub_total_amount'].quantize(Decimal('0.00')),
                     'formatted_sub_total_quantity': self._format_number(sub_group['sub_total_quantity']),
                     'formatted_sub_total_amount': self._format_number(sub_group['sub_total_amount']),
                 })
             
-            formatted_groups.append({
-                'pricelist_item': group['pricelist_item'],
-                'row_number': group['row_number'],
-                'description': group['description'],
-                'unit': group['unit'],
-                'unit_price': group['unit_price'],
-                'formatted_unit_price': self._format_number(group['unit_price']),
-                'sub_rows': formatted_sub_rows,
-                'total_quantity': group['total_quantity'].quantize(Decimal('0.00')),
-                'total_amount': group['total_amount'].quantize(Decimal('0.00')),
-                'formatted_total_quantity': self._format_number(group['total_quantity']),
-                'formatted_total_amount': self._format_number(group['total_amount']),
-                'items_count': sum(len(sub['items']) for sub in formatted_sub_rows),
-            })
         
         return formatted_groups
     
@@ -289,7 +289,7 @@ class MeasurementSession(models.Model):
         return {
             'total_items': active_items.count(),
             'unique_pricelists': unique_pricelists,
-            'disciplines': [self.discipline_choice],
+            'disciplines': [self.discipline_choice] if self.discipline_choice else [],
             'project_name': self.project.project_name,
             'session_date_jalali': self.session_date_jalali,
         }
@@ -548,6 +548,72 @@ class MeasurementSessionItem(models.Model):
             return f"{v:,}".replace(",", "٬")
         except:
             return "۰"
+
+# مدل برای ثبت تغییرات متره با خط خوردگی
+class MeasurementRevision(models.Model):
+    """
+    مدل برای ثبت نسخه‌های مختلف آیتم‌های متره
+    """
+    measurement_item = models.ForeignKey(
+        'MeasurementSessionItem',
+        on_delete=models.CASCADE,
+        related_name='revisions',
+        verbose_name=_('آیتم متره')
+    )
+    
+    # کاربر ویرایش‌کننده
+    edited_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='measurement_revisions',
+        verbose_name=_('ویرایش‌کننده')
+    )
+    
+    # نقش کاربر در زمان ویرایش
+    user_role = models.ForeignKey(
+        ProjectRole,
+        on_delete=models.PROTECT,
+        verbose_name=_('نقش ویرایش‌کننده')
+    )
+    
+    # داده‌های قدیمی
+    old_length = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name=_('طول قبلی')
+    )
+    old_width = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name=_('عرض قبلی')
+    )
+    old_height = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name=_('ارتفاع قبلی')
+    )
+    old_count = models.DecimalField(
+        max_digits=10, decimal_places=2, default=1,
+        verbose_name=_('تعداد قبلی')
+    )
+    old_quantity = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        verbose_name=_('مقدار قبلی')
+    )
+    
+    # دلیل ویرایش
+    revision_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_('دلیل ویرایش')
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = _('نسخه متره')
+        verbose_name_plural = _('نسخه‌های متره')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"تغییر توسط {self.edited_by.username} - {self.created_at}"
 
 class DetailedMeasurement(models.Model):
     """

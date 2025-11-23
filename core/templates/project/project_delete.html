@@ -1,4 +1,6 @@
-{% extends 'layout/base.html' %}
+<!-- templates/project/project_delete.html -->
+
+{% extends 'layout/project_base.html' %}
 {% load static %}
 
 {% block title %}حذف پروژه - {{ project.project_name }}{% endblock %}
@@ -11,12 +13,12 @@
             <nav aria-label="breadcrumb" class="d-none d-md-block">
                 <ol class="breadcrumb breadcrumb-light">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'sooratvaziat:project_list' %}">
+                        <a href="{% url 'projects:project_list' %}">
                             <i class="bi bi-buildings me-1"></i>پروژه‌ها
                         </a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'sooratvaziat:project_detail' project.pk %}">
+                        <a href="{% url 'projects:project_detail' project.pk %}">
                             <i class="bi bi-eye me-1"></i>{{ project.project_name|truncatechars:30 }}
                         </a>
                     </li>
@@ -39,15 +41,15 @@
         </div>
         
         <div class="d-flex gap-2">
-            <a href="{% url 'sooratvaziat:project_edit' project.pk %}" 
+            <a href="{% url 'projects:project_edit' project.pk %}" 
                class="btn btn-outline-warning">
                 <i class="bi bi-pencil me-2"></i>ویرایش
             </a>
-            <a href="{% url 'sooratvaziat:project_detail' project.pk %}" 
+            <a href="{% url 'projects:project_detail' project.pk %}" 
                class="btn btn-outline-primary">
                 <i class="bi bi-eye me-2"></i>مشاهده
             </a>
-            <a href="{% url 'sooratvaziat:project_list' %}" 
+            <a href="{% url 'projects:project_list' %}" 
                class="btn btn-outline-secondary">
                 <i class="bi bi-list-ul me-2"></i>لیست پروژه‌ها
             </a>
@@ -248,13 +250,13 @@
                         
                         <!-- دکمه‌های عمل -->
                         <div class="d-flex flex-column flex-md-row gap-3 justify-content-center align-items-center">
-                            <a href="{% url 'sooratvaziat:project_edit' project.pk %}" 
+                            <a href="{% url 'projects:project_edit' project.pk %}" 
                                class="btn btn-outline-warning btn-lg px-5 py-3">
                                 <i class="bi bi-pencil me-2"></i>
                                 ویرایش به جای حذف
                             </a>
                             
-                            <a href="{% url 'sooratvaziat:project_detail' project.pk %}" 
+                            <a href="{% url 'projects:project_detail' project.pk %}" 
                                class="btn btn-outline-primary btn-lg px-5 py-3">
                                 <i class="bi bi-eye me-2"></i>
                                 مشاهده جزئیات
@@ -373,7 +375,7 @@
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                         بستن
                     </button>
-                    <a href="{% url 'sooratvaziat:project_list' %}" class="btn btn-outline-info">
+                    <a href="{% url 'projects:project_list' %}" class="btn btn-outline-info">
                         <i class="bi bi-list-ul me-2"></i>
                         مشاهده لیست پروژه‌ها
                     </a>

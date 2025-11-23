@@ -1,4 +1,6 @@
-{% extends 'layout/base.html' %}
+<!-- templates/sooratvaziat/project_financial_report.html -->
+
+{% extends 'layout/project_base.html' %}
 {% load humanize %}
 
 {% block title %}گزارش مالی پروژه - {{ project.project_name }}{% endblock %}
@@ -350,7 +352,7 @@
                         </h6>
                         <div class="d-flex flex-wrap gap-2">
                             {% for session in data.sessions %}
-                            <a href="{% url 'sooratvaziat:detailed_session' session.id %}" class="text-decoration-none">
+                            <a href="{% url 'sooratvaziat:session_detail' session.id %}" class="text-decoration-none">
                                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill hover-lift">
                                     <i class="fas fa-eye me-1"></i>
                                     جلسه {{ session.session_number }} - {{ session.session_date|date:"Y/m/d" }}
