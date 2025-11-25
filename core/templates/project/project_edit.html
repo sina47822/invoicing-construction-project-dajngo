@@ -33,7 +33,7 @@
                         </a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'projects:project_detail' pk=project.pk %}">
+                        <a href="{% url 'projects:project_detail' project.pk %}">
                             {{ project.project_name }}
                         </a>
                     </li>
@@ -50,9 +50,13 @@
         </div>
         
         <div class="d-flex gap-2">
-            <a href="{% url 'projects:project_detail' pk=project.pk %}" 
+            <a href="{% url 'projects:project_detail' project.pk %}" 
                class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-right me-2"></i>بازگشت به پروژه
+            </a>
+            <a href="{% url 'projects:project_list' %}" 
+               class="btn btn-outline-primary">
+                <i class="bi bi-list me-2"></i>لیست پروژه‌ها
             </a>
         </div>
     </div>
@@ -276,6 +280,73 @@
                                 {% endif %}
                                 <div class="form-text">توضیحات مختصر درباره پروژه (اختیاری)</div>
                             </div>
+
+                            <!-- ردیف هشتم: کاربران پروژه -->
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h6 class="card-title mb-0">
+                                            <i class="bi bi-people-fill me-2"></i>
+                                            کاربران پروژه
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="{{ form.employer_user.id_for_label }}" class="form-label fw-semibold">
+                                                    {{ form.employer_user.label }}
+                                                </label>
+                                                {{ form.employer_user }}
+                                                {% if form.employer_user.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ form.employer_user.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">کاربر با نقش کارفرما</div>
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <label for="{{ form.project_manager_user.id_for_label }}" class="form-label fw-semibold">
+                                                    {{ form.project_manager_user.label }}
+                                                </label>
+                                                {{ form.project_manager_user }}
+                                                {% if form.project_manager_user.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ form.project_manager_user.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">کاربر با نقش مدیر طرح</div>
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <label for="{{ form.consultant_user.id_for_label }}" class="form-label fw-semibold">
+                                                    {{ form.consultant_user.label }}
+                                                </label>
+                                                {{ form.consultant_user }}
+                                                {% if form.consultant_user.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ form.consultant_user.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">کاربر با نقش مشاور</div>
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <label for="{{ form.supervising_engineer_user.id_for_label }}" class="form-label fw-semibold">
+                                                    {{ form.supervising_engineer_user.label }}
+                                                </label>
+                                                {{ form.supervising_engineer_user }}
+                                                {% if form.supervising_engineer_user.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ form.supervising_engineer_user.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">کاربر با نقش ناظر</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- دکمه‌های ارسال -->
@@ -287,7 +358,7 @@
                             </div>
                             
                             <div class="d-flex gap-2">
-                                <a href="{% url 'projects:project_detail' pk=project.pk %}" class="btn btn-outline-secondary">
+                                <a href="{% url 'projects:project_detail' project.pk %}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-right me-2"></i>انصراف
                                 </a>
                                 <button type="submit" class="btn btn-primary px-4" id="submitBtn">
@@ -310,7 +381,6 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
 <style>
 .form-control, .form-select {
     border-radius: 8px;
@@ -339,25 +409,45 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
-<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Starting form initialization...');
+    console.log('🚀 Starting form initialization for editing...');
     
     // Persian Datepicker
     function initializeDatepicker() {
         const dateInput = document.querySelector('input[name="contract_date"]');
-        if (!dateInput) return;
+        if (!dateInput) {
+            console.log('❌ Date input not found');
+            return;
+        }
         
+        // Check if persianDate is available
+        if (typeof persianDate === 'undefined') {
+            console.error('❌ persianDate library not loaded');
+            return;
+        }
+        
+        console.log('✅ PersianDate library loaded:', typeof persianDate);
+        
+        // Initialize Persian Datepicker
         $(dateInput).persianDatepicker({
             format: 'YYYY/MM/DD',
-            initialValue: false,
+            initialValue: true,
+            initialValueType: 'persian',
             autoClose: true,
             position: "auto",
-            onSelect: function(pd) {
-                dateInput.value = pd.format('YYYY/MM/DD');
+            observer: true,
+            calendar: {
+                persian: {
+                    locale: 'fa',
+                    showHint: true,
+                }
+            },
+            onSelect: function(unixDate) {
+                const selectedDate = new persianDate(unixDate);
+                const formattedDate = selectedDate.format('YYYY/MM/DD');
+                console.log('📅 Selected date:', formattedDate);
+                dateInput.value = formattedDate;
                 dateInput.classList.remove('is-invalid');
             }
         });
@@ -369,8 +459,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 $(dateInput).persianDatepicker('show');
             });
         }
+        
+        console.log('✅ Persian Datepicker initialized');
     }
-
+        
     // Province and City Handling
     function initializeLocationFields() {
         const provinceSelect = document.getElementById('id_province');
@@ -400,11 +492,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const cities = citiesByProvince[selectedProvince];
                 cities.forEach(function(city) {
                     const option = document.createElement('option');
-                    option.value = city[0];
-                    option.textContent = city[1];
+                    option.value = city[0];  // استفاده از مقدار اول (مقدار ذخیره شده)
+                    option.textContent = city[1];  // استفاده از مقدار دوم (نمایشی)
                     citySelect.appendChild(option);
                 });
                 citySelect.disabled = false;
+                
+                // اگر در حالت ویرایش هستیم و شهر قبلاً انتخاب شده، آن را تنظیم کن
+                const initialCity = citySelect.dataset.initialValue || '{{ project.city }}';
+                if (initialCity && initialCity !== 'None') {
+                    citySelect.value = initialCity;
+                }
             }
         }
         
@@ -420,10 +518,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize cities if province is already selected
         if (provinceSelect.value) {
             updateCities();
-            // Set the city value if it exists
-            if (citySelect.dataset.initialValue) {
-                citySelect.value = citySelect.dataset.initialValue;
-            }
+        }
+        
+        // برای حالت ویرایش، مقدار اولیه شهر را ذخیره کن
+        if (citySelect.value) {
+            citySelect.dataset.initialValue = citySelect.value;
         }
     }
 

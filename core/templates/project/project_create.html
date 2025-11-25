@@ -2,7 +2,7 @@
 {% extends 'layout/project_base.html' %}
 {% load static %}
 
-{% block title %}ایجاد پروژه - {{ project.project_name }}{% endblock %}
+{% block title %}ایجاد پروژه جدید{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -32,44 +32,39 @@
                             <i class="bi bi-buildings me-1"></i>پروژه‌ها
                         </a>
                     </li>
-                    <li class="breadcrumb-item">
-                        <a href="#">
-                            {{ project.project_name }}
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">ویرایش</li>
+                    <li class="breadcrumb-item active" aria-current="page">ساخت پروژه جدید</li>
                 </ol>
             </nav>
             <h2 class="mb-1">
-                <i class="bi bi-pencil-square text-primary me-2"></i>
-                ویرایش پروژه
+                <i class="bi bi-plus-circle text-primary me-2"></i>
+                ساخت پروژه جدید
             </h2>
             <p class="text-muted mb-0">
-                <small>اطلاعات پروژه "{{ project.project_name }}" را ویرایش کنید</small>
+                <small>اطلاعات پروژه جدید را وارد کنید</small>
             </p>
         </div>
         
         <div class="d-flex gap-2">
-            <a href="#" 
+            <a href="{% url 'projects:project_list' %}" 
                class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-right me-2"></i>بازگشت به پروژه
+                <i class="bi bi-arrow-right me-2"></i>بازگشت به لیست پروژه‌ها
             </a>
         </div>
     </div>
 
-    <!-- فرم ویرایش پروژه -->
+    <!-- فرم ساخت پروژه -->
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <div class="card border-0 shadow-lg">
                 <div class="card-header bg-primary border-0">
                     <h5 class="card-title mb-0 text-white">
-                        <i class="bi bi-pencil-square text-white me-2"></i>
-                        ویرایش اطلاعات پروژه
+                        <i class="bi bi-plus-circle text-white me-2"></i>
+                        اطلاعات پروژه جدید
                     </h5>
                 </div>
                 
                 <div class="card-body p-4">
-                    <form method="POST" id="projectEditForm" enctype="multipart/form-data" novalidate>
+                    <form method="POST" id="projectCreateForm" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
                         
                         <!-- نمایش خطاهای کلی -->
@@ -254,12 +249,6 @@
                                 {% endif %}
                                 <div class="form-text">
                                     فایل PDF یا Word (حداکثر 5 مگابایت) - اختیاری
-                                    {% if project.contract_file %}
-                                        <br>
-                                        <a href="{{ project.contract_file.url }}" target="_blank" class="text-primary">
-                                            <i class="bi bi-file-earmark-text me-1"></i>مشاهده فایل فعلی
-                                        </a>
-                                    {% endif %}
                                 </div>
                             </div>
                             
@@ -354,12 +343,12 @@
                             </div>
                             
                             <div class="d-flex gap-2">
-                                <a href="#" class="btn btn-outline-secondary">
+                                <a href="{% url 'projects:project_list' %}" class="btn btn-outline-secondary">
                                     <i class="bi bi-arrow-right me-2"></i>انصراف
                                 </a>
-                                <button type="submit" class="btn btn-primary px-4" id="submitBtn">
-                                    <i class="bi bi-check-circle me-2"></i>
-                                    ذخیره تغییرات
+                                <button type="submit" class="btn btn-success px-4" id="submitBtn">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    ساخت پروژه
                                     <span class="spinner-border spinner-border-sm ms-2 d-none" id="submitSpinner"></span>
                                 </button>
                             </div>
@@ -377,7 +366,6 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
 <style>
 .form-control, .form-select {
     border-radius: 8px;
@@ -406,9 +394,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://unpkg.com/persian-date@1.1.0/dist/persian-date.min.js"></script>
-<script src="https://unpkg.com/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Starting form initialization...');
@@ -416,18 +402,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Persian Datepicker
     function initializeDatepicker() {
         const dateInput = document.querySelector('input[name="contract_date"]');
-        if (!dateInput) return;
+        if (!dateInput) {
+            console.log('❌ Date input not found');
+            return;
+        }
         
-        // تنظیم تاریخ امروز به عنوان مقدار اولیه
-        const today = new Date();
-        const persianDate = new persianDate(today);
-        const todayFormatted = persianDate.format('YYYY/MM/DD');
+        // Check if persianDate is available
+        if (typeof persianDate === 'undefined') {
+            console.error('❌ persianDate library not loaded');
+            return;
+        }
         
-        // اگر فیلد خالی است، تاریخ امروز را تنظیم کن
-        if (!dateInput.value) {
+        console.log('✅ PersianDate library loaded:', typeof persianDate);
+        
+        // Set today's date as default
+        const today = new persianDate();
+        const todayFormatted = today.format('YYYY/MM/DD');
+        
+        // If field is empty, set today's date
+        if (!dateInput.value.trim()) {
             dateInput.value = todayFormatted;
         }
         
+        // Initialize Persian Datepicker
         $(dateInput).persianDatepicker({
             format: 'YYYY/MM/DD',
             initialValue: true,
@@ -441,9 +438,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     showHint: true,
                 }
             },
-            onSelect: function(pd) {
-                console.log('📅 Selected date:', pd.format('YYYY/MM/DD'));
-                dateInput.value = pd.format('YYYY/MM/DD');
+            onSelect: function(unixDate) {
+                const selectedDate = new persianDate(unixDate);
+                const formattedDate = selectedDate.format('YYYY/MM/DD');
+                console.log('📅 Selected date:', formattedDate);
+                dateInput.value = formattedDate;
                 dateInput.classList.remove('is-invalid');
             }
         });
@@ -456,9 +455,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        console.log('✅ Persian Datepicker initialized with today:', todayFormatted);
+        console.log('✅ Persian Datepicker initialized');
     }
-
+        
     // Province and City Handling
     function initializeLocationFields() {
         const provinceSelect = document.getElementById('id_province');
@@ -493,12 +492,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     citySelect.appendChild(option);
                 });
                 citySelect.disabled = false;
-                
-                // اگر در حالت ویرایش هستیم و شهر قبلاً انتخاب شده، آن را تنظیم کن
-                const initialCity = citySelect.dataset.initialValue;
-                if (initialCity) {
-                    citySelect.value = initialCity;
-                }
             }
         }
         
@@ -515,16 +508,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (provinceSelect.value) {
             updateCities();
         }
-        
-        // برای حالت ویرایش، مقدار اولیه شهر را ذخیره کن
-        if (citySelect.value) {
-            citySelect.dataset.initialValue = citySelect.value;
-        }
     }
 
     // Form Validation
     function initializeFormValidation() {
-        const form = document.getElementById('projectEditForm');
+        const form = document.getElementById('projectCreateForm');
         if (!form) return;
         
         form.addEventListener('submit', function(e) {
@@ -570,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (submitBtn && submitSpinner) {
                     submitBtn.disabled = true;
                     submitSpinner.classList.remove('d-none');
-                    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>در حال ذخیره...';
+                    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>در حال ساخت پروژه...';
                 }
             }
         });

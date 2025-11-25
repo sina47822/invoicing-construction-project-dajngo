@@ -12,13 +12,13 @@ import logging
 
 # Models
 from .models import Project
-from accounts.models import ProjectUser, ProjectRole, UserProfile
+from accounts.models import ProjectUser, ProjectRole, UserProfile, UserRole
 from sooratvaziat.models import ProjectFinancialSummary, MeasurementSession, MeasurementSessionItem
 
 # Forms and decorators
 #forms 
 from django.forms import inlineformset_factory, modelform_factory, HiddenInput, TextInput, Select
-from .forms import ProjectCreateForm, ProjectEditForm, UserCreateForm, ProjectUserAssignmentForm
+from .forms import ProjectCreateForm, ProjectEditForm, ProjectUserAssignmentForm
 from .decorators import project_access_required, role_required
 
 # Utils
@@ -30,43 +30,21 @@ from sooratvaziat.utils import (
     _get_progress_class,
     format_number_decimal,
     get_status_badge,
-    format_currency
+    format_currency,
+    get_project_statistics,
+    calculate_financial_metrics,
+    get_financial_summary,
+    get_recent_events,
+    get_project_warnings,
+    get_chart_data,
+    calculate_project_duration,
+    get_last_activity,
+    
 )
 
 logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
 
-@login_required
-def user_create(request):
-    """
-    ایجاد کاربر جدید توسط پیمانکار
-    """
-    if not request.user.profile.is_verified:  # فرض کنید پیمانکاران تأیید شده‌اند
-        messages.error(request, 'شما مجوز ایجاد کاربر جدید را ندارید.')
-        return redirect('project:project_list')
-    
-    if request.method == 'POST':
-        form = UserCreateForm(request.POST)
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    user = form.save()
-                    
-                    messages.success(request, f'کاربر {user.username} با موفقیت ایجاد شد.')
-                    return redirect('project:user_list')
-                    
-            except Exception as e:
-                messages.error(request, f'خطا در ایجاد کاربر: {str(e)}')
-        else:
-            messages.error(request, 'لطفا خطاهای فرم را برطرف کنید')
-    else:
-        form = UserCreateForm()
-    
-    context = {
-        'title': 'ایجاد کاربر جدید',
-        'form': form,
-    }
-    return render(request, 'project/user_form.html', context)
 
 @login_required
 @project_access_required(['admin' , 'contractor'])
@@ -518,6 +496,7 @@ def project_detail(request, pk):
                 is_active=True
             )
         
+        # بررسی دسترسی کاربر
         if not project.has_access(request.user):
             messages.error(request, 'شما دسترسی مشاهده این پروژه را ندارید')
             return redirect('projects:project_list')
@@ -614,89 +593,98 @@ def project_edit(request, pk):
     """
     View برای ویرایش پروژه
     """
-    # دریافت پروژه با بررسی مالکیت
-    if request.user.is_superuser:
+    try:
         project = get_object_or_404(Project, pk=pk, is_active=True)
-    else:
-        project = get_object_or_404(
-            Project,
-            Q(created_by=request.user) | Q(project_users__user=request.user),
-            pk=pk,
-            is_active=True
-        )
-    
-    if not project.can_edit(request.user):
-        messages.error(request, 'شما دسترسی ویرایش این پروژه را ندارید')
-        return redirect('project:project_detail', pk=project.pk)    
-    
-    if request.method == 'POST':
-        form = ProjectEditForm(
-            request.POST, 
-            request.FILES, 
-            instance=project, 
-            current_user=request.user,
-            original_project=project
-        )
         
-        if form.is_valid():
-            print("✅ فرم ویرایش معتبر است")
-            try:
-                with transaction.atomic():
-                    # ذخیره تغییرات
-                    updated_project = form.save(commit=False)
-                    
-                    # بررسی تغییرات مهم
-                    changes_made = form.detect_changes(project, updated_project, form)
-                    
-                    # ذخیره نهایی
-                    updated_project.save()
-                    
-                    # ایجاد پیام موفقیت
-                    if changes_made:
+        # بررسی دسترسی کاربر
+        if not request.user.is_superuser:
+            project_user = ProjectUser.objects.filter(
+                project=project, 
+                user=request.user,
+                is_active=True
+            ).first()
+            if not project_user and project.user != request.user:
+                messages.error(request, 'شما دسترسی ویرایش این پروژه را ندارید.')
+                return redirect('projects:project_list')
+        
+        if request.method == 'POST':
+            print("📨 دریافت POST request برای ویرایش")
+            print("📋 داده‌های فرم:", dict(request.POST))
+            
+            form = ProjectEditForm(
+                request.POST, 
+                request.FILES, 
+                instance=project,
+                current_user=request.user
+            )
+            
+            # **اصلاح: تنظیم داده‌های location قبل از اعتبارسنجی**
+            if 'province' in request.POST and request.POST['province']:
+                province = request.POST['province']
+                if province in form.province_cities_data:
+                    cities = form.province_cities_data[province]
+                    form.fields['city'].choices = [('', 'انتخاب شهر')] + cities
+                    form.fields['city'].widget.choices = [('', 'انتخاب شهر')] + cities
+                        
+            if form.is_valid():
+                print("✅ فرم ویرایش معتبر است")
+                try:
+                    with transaction.atomic():
+                        # ذخیره پروژه
+                        project = form.save()
+                        
+                        # ایجاد پیام موفقیت
                         messages.success(
                             request, 
-                            f'پروژه "{updated_project.project_name}" با موفقیت به‌روزرسانی شد. '
-                            f'{", ".join(changes_made)} تغییر یافت.'
+                            f'پروژه "{project.project_name}" با موفقیت ویرایش شد (کد: {project.project_code})'
                         )
-                    else:
-                        messages.info(
-                            request, 
-                            f'پروژه "{updated_project.project_name}" بدون تغییر ذخیره شد.'
-                        )
-                    
-                    return redirect('projects:project_detail', pk=pk)
                         
-            except Exception as e:
-                messages.error(
-                    request, 
-                    f'خطا در به‌روزرسانی پروژه: {str(e)}'
-                )
-                logger.error(f"Project edit error: {str(e)}", exc_info=True)
+                        # ریدایرکت به لیست پروژه‌ها
+                        return redirect('projects:project_list')
+                        
+                except Exception as e:
+                    # لاگ خطا
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error editing project: {str(e)}", exc_info=True)
+                    
+                    messages.error(
+                        request, 
+                        f'خطا در ویرایش پروژه: {str(e)}'
+                    )
+            else:
+                print("❌ فرم ویرایش نامعتبر است")
+                print("🔍 خطاهای فرم:", form.errors)
+                
+                # نمایش خطاهای فرم
+                for field, errors in form.errors.items():
+                    field_label = form.fields[field].label if field in form.fields else field
+                    for error in errors:
+                        messages.error(
+                            request, 
+                            f'خطا در {field_label}: {error}'
+                        )
         else:
-            print("❌ فرم ویرایش نامعتبر است:", form.errors)
-            for field, errors in form.errors.items():
-                field_label = form.fields[field].label if field in form.fields else 'عمومی'
-                for error in errors:
-                    messages.error(request, f'خطا در {field_label}: {error}')
-    else:
-        print(f"📝 نمایش فرم ویرایش برای پروژه {project.pk}")
-        # فرم اولیه با داده‌های پروژه
-        form = ProjectEditForm(
-            instance=project,
-            current_user=request.user,
-            original_project=project
-        )
-    
-    context = {
-        'form': form,
-        'title': f'ویرایش پروژه {project.project_name}',
-        'page_title': 'ویرایش پروژه',
-        'active_menu': 'projects',
-        'province_cities_json': form.get_province_cities_json(),
-        'current_user': request.user,
-        'project': project,
-    }
-    return render(request, 'project/project_edit.html', context)
+            print("📝 درخواست GET - نمایش فرم ویرایش")
+            form = ProjectEditForm(
+                instance=project,
+                current_user=request.user
+            )
+        
+        context = {
+            'form': form,
+            'project': project,
+            'title': f'ویرایش پروژه - {project.project_name}',
+            'page_title': f'ویرایش پروژه - {project.project_name}',
+            'active_menu': 'projects',
+            'province_cities_json': form.get_province_cities_json(),
+            'current_user': request.user,
+        }
+        return render(request, 'project/project_edit.html', context)
+        
+    except Project.DoesNotExist:
+        messages.error(request, 'پروژه مورد نظر یافت نشد.')
+        return redirect('projects:project_list')
 
 def calculate_financial_metrics(project):
     """

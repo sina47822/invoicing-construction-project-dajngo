@@ -18,5 +18,8 @@ urlpatterns = [
     # اگر می‌خوای یک dashboard ساده داشته باشی (مثلاً صفحه اصلی بعد از ورود که navbar رو نشون می‌ده)
     path("settings/", views.settings_view, name="settings"),
     path('profile/', views.profile_view, name='profile'),
-    path('dashboard/', views.dashboard, name='dashboard'),  # این view رو بعداً تعریف می‌کنیم
+    path('dashboard/', views.dashboard, name='dashboard'),
+    
+    path('users/create/', views.user_create, name='user_create'),
+    path('users/', views.user_list, name='user_list'),
 ]

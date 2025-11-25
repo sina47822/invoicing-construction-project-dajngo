@@ -1,0 +1,256 @@
+<!-- templates/accounts/user_form.html -->
+{% extends 'layout/project_base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi {% if message.tags == 'success' %}bi-check-circle text-success{% elif message.tags == 'error' %}bi-exclamation-triangle text-danger{% elif message.tags == 'warning' %}bi-exclamation-triangle text-warning{% else %}bi-info-circle text-info{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb" class="d-none d-md-block">
+                <ol class="breadcrumb breadcrumb-light">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:user_list' %}">
+                            <i class="bi bi-people me-1"></i>کاربران
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">ایجاد کاربر جدید</li>
+                </ol>
+            </nav>
+            <h2 class="mb-1">
+                <i class="bi bi-person-plus text-primary me-2"></i>
+                ایجاد کاربر جدید
+            </h2>
+            <p class="text-muted mb-0">
+                <small>اطلاعات کاربر جدید را وارد کنید</small>
+            </p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{% url 'accounts:user_list' %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right me-2"></i>بازگشت به لیست کاربران
+            </a>
+        </div>
+    </div>
+
+    <!-- فرم ایجاد کاربر -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-primary border-0">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="bi bi-person-plus text-white me-2"></i>
+                        اطلاعات کاربر جدید
+                    </h5>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST" id="userCreateForm" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- اطلاعات احراز هویت -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.username.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.username.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">نام کاربری برای ورود به سیستم</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.role.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.role.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.role }}
+                                {% if form.role.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.role.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">نقش کاربر در سیستم را انتخاب کنید</div>
+                            </div>
+                        </div>
+
+                        <!-- اطلاعات شخصی -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.first_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.last_name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- اطلاعات تماس -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.email.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.phone_number.label }}
+                                </label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.phone_number.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- اطلاعات سازمانی -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.company_name.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.company_name.label }}
+                                </label>
+                                {{ form.company_name }}
+                                {% if form.company_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.company_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.position.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.position.label }}
+                                </label>
+                                {{ form.position }}
+                                {% if form.position.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.position.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- رمز عبور -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.password1.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.password1 }}
+                                {% if form.password1.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.password1.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                {{ form.password1.help_text|safe }}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.password2.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.password2.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- دکمه‌های ارسال -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div>
+                                <small class="text-muted">
+                                    فیلدهای با علامت * اجباری هستند
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-right me-2"></i>انصراف
+                                </a>
+                                <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    ایجاد کاربر
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1.5px solid #dee2e6;
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+}
+
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
