@@ -104,6 +104,7 @@ class UserCreateForm(forms.ModelForm):
         ('project_manager', 'مدیر طرح'),
         ('supervisor', 'ناظر'),
         ('engineer', 'مهندس'),
+        ('consultant', 'مشاور'),
     ]
     
     role = forms.ChoiceField(

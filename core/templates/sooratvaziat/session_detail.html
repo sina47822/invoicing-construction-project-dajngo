@@ -12,12 +12,12 @@
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
+                    <i class="fas fa-info-circle ms-2"></i>
                     اطلاعات صورت جلسه
                 </h5>
             </div>
             <div class="card-body">
-                <table class="table table-borderless">
+                <table class="table table-borderless custom-table">
                     <tr>
                         <th width="40%">شماره صورت جلسه:</th>
                         <td><strong>{{ session.session_number }}</strong></td>
@@ -30,7 +30,13 @@
                         <th>رشته:</th>
                         <td>
                             <span class="badge bg-secondary">
-                                {{ session.get_discipline_choice_display }}
+                                {% if session.price_list and session.price_list.discipline %}
+                                    {{ session.price_list.discipline }}
+                                {% elif session.discipline_choice %}
+                                    {{ session.discipline_choice }}
+                                {% else %}
+                                    تعیین نشده
+                                {% endif %}
                             </span>
                         </td>
                     </tr>
@@ -64,16 +70,45 @@
                 {% endif %}
 
                 <div class="d-grid gap-2 mt-3">
-                    <a href="{% url 'sooratvaziat:session_edit' project.pk session.pk %}" 
-                       class="btn btn-warning btn-sm">
-                        <i class="fas fa-edit me-1"></i>
-                        ویرایش صورت جلسه
-                    </a>
-                    <a href="{% url 'sooratvaziat:session_list' project.pk %}" 
-                       class="btn btn-secondary btn-sm">
-                        <i class="fas fa-arrow-right me-1"></i>
-                        بازگشت به لیست
-                    </a>
+                    <div class="btn-group-vertical" role="group">
+                        <a href="{% url 'sooratvaziat:session_edit' project.pk session.pk %}" 
+                        class="btn btn-warning btn-sm text-center">
+                            <i class="fas fa-edit ms-2"></i>
+                            ویرایش صورت جلسه
+                        </a>
+                        
+                        <!-- دکمه ریز متره -->
+                        {% with discipline=session.price_list.discipline_choice|default:session.discipline_choice %}
+                        {% if discipline %}
+                        <a href="{% url 'sooratvaziat:riz_metre' project.pk discipline %}" 
+                        class="btn btn-primary btn-sm text-center">
+                            <i class="fas fa-calculator ms-2"></i>
+                            مشاهده ریز متره 
+                                {% if session.price_list and session.price_list.discipline %}
+                                    {{ session.price_list.discipline }}
+                                {% elif session.discipline_choice %}
+                                    {{ session.discipline_choice }}
+                                {% else %}
+                                    تعیین نشده
+                                {% endif %}
+                        </a>
+                        {% endif %}
+                        {% endwith %}
+                        
+                        <a href="{% url 'sooratvaziat:riz_metre_discipline_list' project.pk %}" 
+                        class="btn btn-outline-info btn-sm text-center">
+                            <i class="fas fa-ruler ms-2"></i>
+                            تمام رشته‌های ریز متره
+                        </a>
+                        
+                        <a href="{% url 'sooratvaziat:session_list' project.pk %}" 
+                        class="btn btn-secondary btn-sm text-center">
+                            <i class="fas fa-list ms-2"></i>
+                            بازگشت به لیست صورت جلسات
+                        </a>
+                        
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -82,7 +117,7 @@
         <div class="card mt-3">
             <div class="card-header bg-info text-white">
                 <h6 class="mb-0">
-                    <i class="fas fa-chart-bar me-2"></i>
+                    <i class="fas fa-chart-bar ms-2"></i>
                     آمار کلی
                 </h6>
             </div>
@@ -106,7 +141,7 @@
         <div class="card">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="fas fa-list me-2"></i>
+                    <i class="fas fa-list ms-2"></i>
                     آیتم‌های صورت جلسه
                 </h5>
                 <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addItemModal">
@@ -115,79 +150,60 @@
                 </button>
             </div>
             <div class="card-body">
-                <!-- در قسمت نمایش آیتم‌ها -->
                 {% if grouped_items %}
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
+                        <table class="table custom-table table-hover">
+                            <thead class="table-primary">
                                 <tr>
-                                    <th>ردیف فهرست</th>
-                                    <th>شرح آیتم</th>
-                                    <th>شرح ردیف</th>
-                                    <th>ابعاد</th>
-                                    <th>تعداد</th>
-                                    <th>مقدار</th>
-                                    <th>واحد</th>
-                                    <th>عملیات</th>
+                                    <th width="10%">شماره فهرست</th>
+                                    <th width="25%">شرح آیتم</th>
+                                    <th width="10%">واحد</th>
+                                    <th width="10%">مقدار کل</th>
+                                    <th width="15%">یادداشت</th>
+                                    <th width="20%">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody>
-                            <!-- در قسمت نمایش آیتم‌ها در تمپلیت -->
                             {% for group in grouped_items %}
-                                {% for sub_row in group.sub_rows %}
-                                    {% for item_data in sub_row.items %}
-                                    <tr data-item-id="{{ item_data.instance.pk }}">
-                                        <td><strong>{{ group.row_number }}</strong></td>
-                                        <td>{{ group.description }}</td>
-                                        <td>{{ item_data.row_description }}</td>
-                                        <td>
-                                            {% if item_data.length or item_data.width or item_data.height %}
-                                                {{ item_data.length|default:0 }} × 
-                                                {{ item_data.width|default:0 }} × 
-                                                {{ item_data.height|default:0 }}
-                                            {% else %}
-                                                <span class="text-muted">-</span>
+                                <tr style="background-color: {% if group.has_revisions %}#fff3cd{% else %}#f8f9fa{% endif %};">
+                                    <td class="align-middle fw-bold">{{ group.row_number }}</td>
+                                    <td class="align-middle">{{ group.description }}</td>
+                                    <td class="align-middle">{{ group.unit }}</td>
+                                    <td class="align-middle fw-bold">{{ group.total_quantity|floatformat:2 }}</td>
+                                    <td class="align-middle">
+                                        {% if group.notes %}
+                                            {{ group.notes }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        <!-- دکمه‌های کوچک و در یک ردیف -->
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <!-- دکمه مشاهده جزئیات -->
+                                            <button type="button" class="btn btn-info" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#itemDetailsModal"
+                                                    data-group-id="{{ group.row_number }}"
+                                                    title="مشاهده جزئیات">
+                                                <i class="bi bi-eye">مشاهده جزئیات</i>
+                                            </button>
+                                            
+                                            <!-- نمایش اطلاعات Revision -->
+                                            {% if group.has_revisions %}
+                                            <button type="button" class="btn btn-secondary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#groupRevisionsModal"
+                                                    data-group-id="{{ group.row_number }}"
+                                                    title="تاریخچه تغییرات گروه">
+                                                <i class="bi bi-clock-history"></i>
+                                            </button>
                                             {% endif %}
-                                        </td>
-                                        <td>{{ item_data.count }}</td>
-                                        <td>
-                                            <strong>{{ item_data.quantity }}</strong>
-                                        </td>
-                                        <td>{{ group.unit }}</td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <!-- دکمه ویرایش آیتم -->
-                                                <button class="btn btn-outline-warning btn-sm edit-item-btn" 
-                                                        title="ویرایش"
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#editItemModal"
-                                                        data-item-id="{{ item_data.instance.pk }}"
-                                                        data-pricelist-item-id="{{ item_data.instance.pricelist_item.pk }}"
-                                                        data-row-description="{{ item_data.row_description }}"
-                                                        data-length="{{ item_data.length|default:'' }}"
-                                                        data-width="{{ item_data.width|default:'' }}"
-                                                        data-height="{{ item_data.height|default:'' }}"
-                                                        data-count="{{ item_data.count|default:1 }}"
-                                                        data-weight="{{ item_data.weight|default:'' }}"
-                                                        data-notes="{{ item_data.notes|default:'' }}">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                
-                                                <!-- دکمه حذف آیتم -->
-                                                <button class="btn btn-outline-danger btn-sm delete-item-btn" 
-                                                        title="حذف"
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#deleteItemModal"
-                                                        data-item-id="{{ item_data.instance.pk }}"
-                                                        data-item-description="{{ item_data.row_description }}">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
                             {% endfor %}
+                            
                             </tbody>
                         </table>
                     </div>
@@ -302,67 +318,30 @@
 
 <!-- Modal ویرایش آیتم -->
 <div class="modal fade" id="editItemModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
+            <!-- هدر با رنگ آبی واقعی -->
+            <div class="modal-header text-white" style="background-color: #0d6efd;">
                 <h5 class="modal-title">ویرایش آیتم</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="" id="edit-item-form">
+            
+            <form method="post" action="{% url 'sooratvaziat:edit_session_item' project_pk=project.pk session_pk=session.pk item_pk=0 %}" id="editItemForm">
                 {% csrf_token %}
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">آیتم فهرست بها *</label>
-                                <select name="pricelist_item" class="form-select" required id="edit-pricelist-item">
-                                    <option value="">-- انتخاب کنید --</option>
-                                    {% for item in pricelist_items %}
-                                        <option value="{{ item.pk }}" 
-                                                data-unit="{{ item.unit }}"
-                                                data-description="{{ item.description }}">
-                                            {{ item.row_number }} - {{ item.description }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">شرح ردیف *</label>
-                                <input type="text" name="row_description" class="form-control" 
-                                       id="edit-row-description" required>
-                            </div>
-                        </div>
-                    </div>
+                <div class="modal-body bg-light">
+                    <input type="hidden" name="item_id" id="editItemId">
                     
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">طول (متر)</label>
-                                <input type="number" step="0.01" name="length" class="form-control" 
-                                       id="edit-length">
+                                <label for="editLength" class="form-label fw-bold text-dark">طول (متر)</label>
+                                <input type="number" step="0.01" class="form-control" id="editLength" name="length" placeholder="0.00" style="border-color: #0d6efd;">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">عرض (متر)</label>
-                                <input type="number" step="0.01" name="width" class="form-control" 
-                                       id="edit-width">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">ارتفاع (متر)</label>
-                                <input type="number" step="0.01" name="height" class="form-control" 
-                                       id="edit-height">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="mb-3">
-                                <label class="form-label">تعداد *</label>
-                                <input type="number" step="0.01" name="count" class="form-control" 
-                                       id="edit-count" required min="0.01">
+                                <label for="editWidth" class="form-label fw-bold text-dark">عرض (متر)</label>
+                                <input type="number" step="0.01" class="form-control" id="editWidth" name="width" placeholder="0.00" style="border-color: #0d6efd;">
                             </div>
                         </div>
                     </div>
@@ -370,28 +349,59 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">وزن (کیلوگرم)</label>
-                                <input type="number" step="0.01" name="weight" class="form-control" 
-                                       id="edit-weight">
+                                <label for="editHeight" class="form-label fw-bold text-dark">ارتفاع (متر)</label>
+                                <input type="number" step="0.01" class="form-control" id="editHeight" name="height" placeholder="0.00" style="border-color: #0d6efd;">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label">یادداشت</label>
-                                <textarea name="notes" class="form-control" rows="2" 
-                                          id="edit-notes" placeholder="یادداشت‌های مربوط به این ردیف"></textarea>
+                                <label for="editCount" class="form-label fw-bold text-dark">تعداد</label>
+                                <input type="number" step="0.01" class="form-control" id="editCount" name="count" value="1" style="border-color: #0d6efd;">
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="mb-3">
+                        <label for="editNotes" class="form-label fw-bold text-dark">یادداشت</label>
+                        <textarea class="form-control" id="editNotes" name="notes" rows="2" placeholder="توضیحات مربوط به این آیتم..." style="border-color: #0d6efd;"></textarea>
+                    </div>
+                    
+                    {% if not user_can_edit_directly %}
+                    <div class="mb-3 p-3 rounded" style="background-color: #fff3cd; border: 1px solid #ffc107;">
+                        <label for="revisionReason" class="form-label fw-bold text-dark">دلیل اصلاح</label>
+                        <input type="text" class="form-control" id="revisionReason" name="revision_reason" 
+                               placeholder="علت تغییر این آیتم را توضیح دهید" required style="border-color: #ffc107;">
+                        <div class="form-text mt-2" style="color: #856404;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            این تغییر به صورت اصلاحیه ثبت می‌شود و پس از تأیید پیمانکار اعمال خواهد شد.
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                    <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn text-white" style="background-color: #0d6efd;">ذخیره تغییرات</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Modal برای نمایش تاریخچه تغییرات -->
+<div class="modal fade" id="revisionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تاریخچه تغییرات آیتم</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="revisionsContent">
+                <!-- محتوای تاریخچه تغییرات با AJAX پر می‌شود -->
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- Modal حذف آیتم -->
 <div class="modal fade" id="deleteItemModal" tabindex="-1">
@@ -415,14 +425,79 @@
         </div>
     </div>
 </div>
-{% endblock %}
+<!-- Modal تایید حذف گروه -->
+<div class="modal fade" id="deleteGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تایید حذف گروه</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف تمام آیتم‌های گروه "<span id="delete-group-description"></span>" اطمینان دارید؟</p>
+                <p class="text-danger"><small>این عمل تمام آیتم‌های این گروه را حذف می‌کند و قابل بازگشت نیست.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <form method="post" action="" id="delete-group-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">حذف گروه</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal جزئیات آیتم‌های گروه -->
+<div class="modal fade" id="itemDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">جزئیات آیتم‌های گروه <span id="modalGroupNumber"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="itemDetailsContent">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                    <p>در حال بارگذاری جزئیات...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- در انتهای block content -->
+<div class="mt-3">
+    <details>
+        <summary>اطلاعات دیباگ (فقط برای توسعه)</summary>
+        <div class="alert alert-info">
+            <strong>اطلاعات جلسه:</strong><br>
+            - پروژه: {{ project.pk }}<br>
+            - جلسه: {{ session.pk }}<br>
+            - کاربر: {{ request.user.username }}<br>
+            - نقش: {{ user_role }}<br>
+            - امکان ویرایش مستقیم: {{ user_can_edit_directly }}<br>
+        </div>
+    </details>
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+
+
+</style>
+{% endblock %}
 {% block extra_js %}
 <script>
 // مدیریت رویدادهای ویرایش و حذف آیتم‌ها
 document.addEventListener('DOMContentLoaded', function() {
     // ویرایش آیتم
     const editButtons = document.querySelectorAll('.edit-item-btn');
+    
     editButtons.forEach(button => {
         button.addEventListener('click', function() {
             const itemId = this.dataset.itemId;
@@ -468,6 +543,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    const editModal = document.getElementById('editItemModal');
+    const editForm = document.getElementById('editItemForm');
+    
+    editModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const itemId = button.getAttribute('data-item-id');
+        const itemLength = button.getAttribute('data-item-length');
+        const itemWidth = button.getAttribute('data-item-width');
+        const itemHeight = button.getAttribute('data-item-height');
+        const itemCount = button.getAttribute('data-item-count');
+        const itemNotes = button.getAttribute('data-item-notes');
+        
+        // پر کردن فرم
+        document.getElementById('editItemId').value = itemId;
+        document.getElementById('editLength').value = itemLength;
+        document.getElementById('editWidth').value = itemWidth;
+        document.getElementById('editHeight').value = itemHeight;
+        document.getElementById('editCount').value = itemCount;
+        document.getElementById('editNotes').value = itemNotes;
+        
+        // آپدیت action فرم
+        editForm.action = editForm.action.replace('/0/', `/${itemId}/`);
+    });
+    
+    // مدیریت Modal تاریخچه تغییرات
+    const revisionsModal = document.getElementById('revisionsModal');
+    revisionsModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const itemId = button.getAttribute('data-item-id');
+        
+        // بارگذاری تاریخچه تغییرات با AJAX
+        fetch(`/sooratvaziat/projects/${project_pk}/sessions/${session_pk}/items/${itemId}/revisions/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById('revisionsContent').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading revisions:', error);
+                document.getElementById('revisionsContent').innerHTML = 
+                    '<div class="alert alert-danger">خطا در بارگذاری تاریخچه تغییرات</div>';
+            });
+    });
     // حذف آیتم
     const deleteButtons = document.querySelectorAll('.delete-item-btn');
     deleteButtons.forEach(button => {
@@ -505,6 +627,133 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('weight:', this.dataset.weight);
             console.log('notes:', this.dataset.notes);
         });
+    });
+});
+</script>
+
+<script>
+// مدیریت Modal ویرایش آیتم
+const editItemModal = document.getElementById('editItemModal');
+const editItemForm = document.getElementById('editItemForm');
+
+editItemModal.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const itemId = button.getAttribute('data-item-id');
+    const itemLength = button.getAttribute('data-item-length');
+    const itemWidth = button.getAttribute('data-item-width');
+    const itemHeight = button.getAttribute('data-item-height');
+    const itemCount = button.getAttribute('data-item-count');
+    const itemNotes = button.getAttribute('data-item-notes');
+    
+    console.log('📝 ویرایش آیتم:', {
+        itemId, itemLength, itemWidth, itemHeight, itemCount, itemNotes
+    });
+    
+    // پر کردن فرم با داده‌های آیتم
+    document.getElementById('editItemId').value = itemId;
+    document.getElementById('editLength').value = itemLength;
+    document.getElementById('editWidth').value = itemWidth;
+    document.getElementById('editHeight').value = itemHeight;
+    document.getElementById('editCount').value = itemCount;
+    document.getElementById('editNotes').value = itemNotes;
+    
+    // به روز رسانی action فرم با آی دی آیتم
+    const newAction = editItemForm.action.replace('/0/', `/${itemId}/`);
+    editItemForm.action = newAction;
+    
+    console.log('✅ فرم ویرایش پر شد. Action:', newAction);
+});
+
+// مدیریت ارسال فرم ویرایش
+editItemForm.addEventListener('submit', function(e) {
+    console.log('🚀 ارسال فرم ویرایش آیتم...');
+    
+    const formData = new FormData(editItemForm);
+    console.log('📄 داده‌های فرم ویرایش:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`   - ${key}: ${value}`);
+    }
+});
+
+// مدیریت Modal جزئیات آیتم‌ها
+document.addEventListener('DOMContentLoaded', function() {
+    const itemDetailsModal = document.getElementById('itemDetailsModal');
+    
+    itemDetailsModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const groupNumber = button.getAttribute('data-group-id');
+        
+        console.log('📖 درخواست جزئیات گروه:', groupNumber);
+        
+        document.getElementById('modalGroupNumber').textContent = groupNumber;
+        
+        const url = `{% url 'sooratvaziat:group_items_detail' project.pk session.pk '0' %}`.replace('0', groupNumber);
+        console.log('🔗 URL درخواست:', url);
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`خطای شبکه: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                document.getElementById('itemDetailsContent').innerHTML = html;
+                console.log('✅ جزئیات گروه با موفقیت بارگذاری شد');
+                
+                // بعد از بارگذاری جزئیات، event listenerهای جدید را اضافه کن
+                attachEditEventListeners();
+            })
+            .catch(error => {
+                console.error('❌ خطا در بارگذاری جزئیات گروه:', error);
+                document.getElementById('itemDetailsContent').innerHTML = 
+                    `<div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        خطا در بارگذاری جزئیات گروه: ${error.message}
+                    </div>`;
+            });
+    });
+    
+    function attachEditEventListeners() {
+        // اضافه کردن event listener برای دکمه‌های ویرایش در محتوای بارگذاری شده
+        const editButtons = document.querySelectorAll('#itemDetailsContent .edit-item-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                console.log('🎯 دکمه ویرایش در جزئیات گروه کلیک شد');
+            });
+        });
+    }
+    
+    // مدیریت حذف تک‌تک آیتم‌ها
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-single-item-btn')) {
+            const button = e.target.closest('.delete-single-item-btn');
+            const itemId = button.getAttribute('data-item-id');
+            const itemDescription = button.getAttribute('data-item-description');
+            
+            if (confirm(`آیا از حذف آیتم "${itemDescription}" اطمینان دارید؟`)) {
+                const url = `{% url 'sooratvaziat:delete_session_item' project.pk session.pk 0 %}`.replace('0', itemId);
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('خطا در حذف آیتم');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('خطا در حذف آیتم');
+                });
+            }
+        }
     });
 });
 </script>

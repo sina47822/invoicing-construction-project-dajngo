@@ -1,0 +1,340 @@
+<!-- templates/accounts/user_list.html -->
+{% extends 'layout/profile_base.html' %}
+
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="row mb-4">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi {% if message.tags == 'success' %}bi-check-circle text-success{% elif message.tags == 'error' %}bi-exclamation-triangle text-danger{% elif message.tags == 'warning' %}bi-exclamation-triangle text-warning{% else %}bi-info-circle text-info{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb" class="d-none d-md-block">
+                <ol class="breadcrumb breadcrumb-light">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'accounts:dashboard' %}">
+                            <i class="bi bi-house me-1"></i>داشبورد
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">مدیریت کاربران</li>
+                </ol>
+            </nav>
+            <h2 class="mb-1">
+                <i class="bi bi-people text-primary me-2"></i>
+                مدیریت کاربران
+            </h2>
+            <p class="text-muted mb-0">
+                <small>مدیریت کاربران سیستم</small>
+            </p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{% url 'projects:project_create' %}" 
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right me-2"></i>بازگشت به ایجاد پروژه
+            </a>
+            {% if user.is_superuser or user_roles.role == 'admin' or user_roles.role == 'contractor' %}
+            <a href="{% url 'accounts:user_create' %}" 
+               class="btn btn-primary">
+                <i class="bi bi-person-plus me-2"></i>ایجاد کاربر جدید
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- آمار سریع -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ users.count }}</h4>
+                            <small>کل کاربران</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-people fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ users|length }}</h4>
+                            <small>کاربران فعال</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">
+                                {% with contractor_count=users|length %}
+                                    {{ contractor_count }}
+                                {% endwith %}
+                            </h4>
+                            <small>پیمانکاران</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-building fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">
+                                {% with admin_count=users|length %}
+                                    {{ admin_count }}
+                                {% endwith %}
+                            </h4>
+                            <small>مدیران سیستم</small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-shield-check fs-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- جدول کاربران -->
+    <div class="card border-0 shadow-lg">
+        <div class="card-header bg-light border-0">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-list-ul me-2"></i>
+                لیست کاربران
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>نام کاربری</th>
+                            <th>نام کامل</th>
+                            <th>ایمیل</th>
+                            <th>نقش‌ها</th>
+                            <th>وضعیت</th>
+                            <th>تاریخ عضویت</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ user.username }}</strong>
+                                {% if user.is_superuser %}
+                                    <span class="badge bg-danger ms-1">سوپر کاربر</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.get_full_name %}
+                                    {{ user.get_full_name }}
+                                {% else %}
+                                    <span class="text-muted">تعیین نشده</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.email|default:"-" }}</td>
+                            <td>
+                                {% for role in user.roles.all %}
+                                    {% if role.is_active %}
+                                        <span class="badge bg-primary me-1 mb-1">{{ role.get_role_display }}</span>
+                                    {% endif %}
+                                {% empty %}
+                                    <span class="text-muted">بدون نقش</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">فعال</span>
+                                {% else %}
+                                    <span class="badge bg-danger">غیرفعال</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ user.date_joined|date:"Y/m/d" }}</small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <!-- دکمه مشاهده -->
+                                    <a href="#" class="btn btn-outline-primary" 
+                                       data-bs-toggle="tooltip" title="مشاهده جزئیات">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    
+                                    <!-- دکمه مدیریت نقش‌ها (فقط برای سوپر یوزرها) -->
+                                    {% if request.user.is_superuser %}
+                                    <a href="{% url 'accounts:manage_roles' user.id %}" 
+                                       class="btn btn-outline-info" 
+                                       data-bs-toggle="tooltip" title="مدیریت نقش‌ها">
+                                        <i class="bi bi-person-gear"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <!-- دکمه ویرایش (فقط برای سوپر یوزرها و ادمین‌ها) -->
+                                    {% if request.user.is_superuser or request.user_roles.role == 'admin' %}
+                                    <a href="#" class="btn btn-outline-warning" 
+                                       data-bs-toggle="tooltip" title="ویرایش کاربر">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <!-- دکمه غیرفعال کردن (فقط برای سوپر یوزرها) -->
+                                    {% if request.user.is_superuser and user.is_active and user != request.user %}
+                                    <form method="post" action="#" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger" 
+                                                data-bs-toggle="tooltip" title="غیرفعال کردن"
+                                                onclick="return confirm('آیا از غیرفعال کردن کاربر مطمئن هستید؟')">
+                                            <i class="bi bi-person-x"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-people display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">کاربری یافت نشد</h4>
+                <p class="text-muted">هیچ کاربری در سیستم ثبت نشده است.</p>
+                <a href="{% url 'accounts:user_create' %}" class="btn btn-primary mt-2">
+                    <i class="bi bi-person-plus me-2"></i>ایجاد کاربر جدید
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- فوتر جدول -->
+        {% if users %}
+        <div class="card-footer bg-light border-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted">
+                        نمایش {{ users.count }} کاربر از {{ users.count }}
+                    </small>
+                </div>
+                <div>
+                    <small class="text-muted">
+                        آخرین بروزرسانی: {% now "Y/m/d H:i" %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- راهنمای نقش‌ها -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-header bg-transparent border-0">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        راهنمای نقش‌ها
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-primary me-2">پیمانکار</span>
+                                <small>ایجاد پروژه و مدیریت متره</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-success me-2">مدیر طرح</span>
+                                <small>مدیریت کلی پروژه‌ها</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-info me-2">کارفرما</span>
+                                <small>مشاهده گزارشات مالی</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-warning me-2">ناظر</span>
+                                <small>تایید متره و نظارت</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table th {
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+.card {
+    border-radius: 12px;
+}
+.badge {
+    font-size: 0.75em;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // فعال کردن tooltip‌ها
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    console.log('✅ User list page initialized');
+});
+</script>
+{% endblock %}

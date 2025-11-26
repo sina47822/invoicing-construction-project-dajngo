@@ -2,6 +2,7 @@
 {% extends 'layout/project_base.html' %}
 
 {% load static %}
+{% load humanize %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -55,6 +56,9 @@
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-black">
                                 {{ stats_summary.total_contract }}
+                            </div>
+                            <div class="text-xs text-muted mt-1">
+                                با مالیات: {{ stats_summary.total_contract_vat }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -169,7 +173,7 @@
                             <th>نام پروژه</th>
                             <th>سال اجرا</th>
                             <th>مبلغ قرارداد</th>
-                            <th>مبلغ متره</th>
+                            <th>مبلغ متره شده</th>
                             <th>درصد پیشرفت</th>
                             <th>تعداد صورت‌جلسات</th>
                             <th>تعداد آیتم‌ها</th>
@@ -181,8 +185,8 @@
                         <tr class="{% if project.financial_info.progress_class %}project-{{ project.financial_info.progress_class }}{% endif %}">
                             <td>
                                 <strong>{{ project.project_code }}</strong>
-                                {% if project.client %}
-                                <br><small class="text-muted">کارفرما: {{ project.client_name }}</small>
+                                {% if project.employer %}
+                                <br><small class="text-muted">کارفرما: {{ project.employer }}</small>
                                 {% else %}
                                 <br><small class="text-muted">کارفرما: نامشخص</small>
                                 {% endif %}
@@ -198,21 +202,26 @@
                             <td>{{ project.execution_year }}</td>
                             <td>
                                 <div class="text-right">
-                                    {{ project.total_contract_amount|floatformat:0}}
-                                    {% if project.financial_info.total_amount > 0 %}
+                                    {{ project.contract_amount|intcomma }}
+                                    {% if project.financial_info.contract_amount > 0 %}
                                     <br><small class="text-success">
                                         <i class="fas fa-check-circle"></i> 
-                                        {{ project.financial_info.formatted_total_amount }}
+                                            با مالیات: {{ project.formatted_contract_amount_with_vat|intcomma }}
                                     </small>
                                     {% endif %}
                                 </div>
                             </td>
                             <td>
                                 <div class="text-right">
-                                    {{ project.financial_info.formatted_total_amount }}
-                                    <br><small class="text-info">
-                                        با مالیات: {{ project.financial_info.formatted_total_vat }}
-                                    </small>
+                                    {% if project.formatted_total_measured > 0 %}
+                                        {{ project.formatted_total_measured|floatformat:0 }}
+                                        <br><small class="text-info">
+                                            با مالیات: {{ project.formatted_total_measured_vat }}
+                                        </small>
+                                    {% else %}
+                                        0
+                                    {% endif %}
+
                                 </div>
                             </td>
                             <td>
@@ -264,6 +273,17 @@
                                     class="btn btn-sm btn-success mb-1" 
                                     title="صورت‌جلسات">
                                         <i class="fas fa-file-alt"></i>
+                                    </a>
+                                    <a href="{% url 'sooratvaziat:riz_metre_discipline_list' project.pk %}" 
+                                        class="btn btn-sm btn-primary mb-1" 
+                                        title="ریز متره">
+                                            <i class="fas fa-ruler-combined"></i>
+                                    </a>
+                                    <!-- لینک جدید: خلاصه رشته‌ها -->
+                                    <a href="{% url 'sooratvaziat:discipline_summary' project.pk %}" 
+                                        class="btn btn-sm btn-dark mb-1" 
+                                        title="خلاصه رشته‌ها">
+                                            <i class="fas fa-layer-group"></i>
                                     </a>
                                     <a href="{% url 'sooratvaziat:project_financial_report' project.pk %}" 
                                     class="btn btn-sm btn-secondary mb-1" 

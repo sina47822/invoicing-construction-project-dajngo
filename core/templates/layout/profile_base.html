@@ -226,73 +226,12 @@
 </head>
 
 <body>
+    {% include 'components/topbar.html' %}
+
     <div class="profile-layout">
+
         <!-- Sidebar -->
-        <aside class="profile-sidebar" id="profileSidebar">
-            <div class="sidebar-header">
-                <a href="{% url 'accounts:profile' %}" class="logo">
-                    <i class="fas fa-project-diagram me-2"></i>
-                    <span class="sidebar-logo-text">پروژه‌های من</span>
-                </a>
-                <button class="btn btn-sm btn-outline-light mt-2 d-none d-md-block" onclick="toggleSidebar()">
-                    <i class="fas fa-chevron-right" id="sidebarToggleIcon"></i>
-                </button>
-            </div>
-
-            <nav class="sidebar-nav">
-                <!-- بخش پروژه‌های کاربر -->
-                <div class="nav-section">
-                    <div class="nav-section-title">پروژه‌های من</div>
-                    {% if user_projects %}
-                        {% for project in user_projects %}
-                        <a href="{% url 'project:project_detail' project.pk %}" 
-                           class="nav-link {% if request.resolver_match.kwargs.pk == project.pk|stringformat:'i' %}active{% endif %}">
-                            <i class="fas fa-building"></i>
-                            <span>{{ project.project_name }}</span>
-                            <span class="badge bg-light text-dark">{{ project.get_project_type_display }}</span>
-                        </a>
-                        {% endfor %}
-                    {% else %}
-                        <div class="text-center text-muted py-3">
-                            <i class="fas fa-folder-open fa-2x mb-2"></i>
-                            <p class="small">پروژه‌ای یافت نشد</p>
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- بخش ایجاد پروژه جدید (فقط برای پیمانکاران) -->
-                {% if user_roles.contractor or user_roles.admin %}
-                <div class="nav-section">
-                    <div class="nav-section-title">مدیریت</div>
-                    <a href="{% url 'project:project_create' %}" class="nav-link">
-                        <i class="fas fa-plus-circle"></i>
-                        <span>ایجاد پروژه جدید</span>
-                    </a>
-                    <a href="{% url 'project:user_create' %}" class="nav-link">
-                        <i class="fas fa-user-plus"></i>
-                        <span>ایجاد کاربر جدید</span>
-                    </a>
-                </div>
-                {% endif %}
-
-                <!-- بخش پروفایل کاربر -->
-                <div class="nav-section">
-                    <div class="nav-section-title">حساب کاربری</div>
-                    <a href="{% url 'accounts:profile' %}" class="nav-link">
-                        <i class="fas fa-user"></i>
-                        <span>پروفایل من</span>
-                    </a>
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-edit"></i>
-                        <span>ویرایش پروفایل</span>
-                    </a>
-                    <a href="{% url 'accounts:logout' %}" class="nav-link text-warning">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>خروج</span>
-                    </a>
-                </div>
-            </nav>
-        </aside>
+             {% include 'components/profile_sidebar.html' %}
 
         <!-- Main Content -->
         <main class="profile-main">

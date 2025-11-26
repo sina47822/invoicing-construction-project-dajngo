@@ -16,29 +16,6 @@ from accounts.models import ProjectRole
 logger = logging.getLogger(__name__)
 from django.utils.translation import gettext_lazy as _
 
-class DetailedMeasurement(models.Model):
-    price_list_item = models.OneToOneField(PriceListItem, on_delete=models.CASCADE, related_name='detailed_measurement')
-    _total_quantity = models.DecimalField(max_digits=15, decimal_places=2, default=0, validators=[MinValueValidator(Decimal('0'))])
-    
-    # فیلدهای لاگ‌گیری
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ایجاد")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان آخرین ویرایش")
-    is_active = models.BooleanField(default=True, verbose_name="فعال/غیرفعال (برای حذف نرم)")
-    modified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="ویرایش‌کننده")
-    history = HistoricalRecords()
-
-    @property
-    def total_quantity(self):
-        return self._total_quantity  # read-only property
-
-    def __str__(self):
-        return f"ریز متره برای {self.price_list_item.row_number}"
-
-    def update_total(self):
-        # محاسبه مجموع quantities از تمام MeasurementSessionItemهای مرتبط
-        self._total_quantity = sum(item.get_total_item_amount() for item in self.price_list_item.pricelist_items.all())
-        self.save()
-
 # حالا متد update_detailed_measurements در MeasurementSession
 class MeasurementSession(models.Model):
     """
@@ -64,7 +41,7 @@ class MeasurementSession(models.Model):
         blank=True
     )
     price_list = models.ForeignKey(
-        PriceList,
+        'fehrestbaha.PriceList',
         on_delete=models.PROTECT,
         related_name='measurement_sessions',
         verbose_name="فهرست بها مرتبط",
@@ -159,7 +136,92 @@ class MeasurementSession(models.Model):
             self.created_by = user or getattr(self, 'created_by', None)
         self.modified_by = user or getattr(self, 'modified_by', None)
         
-        super().save(*args, **kwargs)    
+        # محاسبه تعداد آیتم‌های فعال قبل از ذخیره
+        if self.pk:
+            self.items_count = self.items.filter(is_active=True).count()
+        
+        super().save(*args, **kwargs)
+        
+        # به‌روزرسانی DetailedMeasurement پس از ذخیره
+        self.update_detailed_measurements()
+
+    def update_detailed_measurements(self):
+        """
+        به‌روزرسانی ریز متره‌های دقیق (DetailedMeasurement) برای این صورت جلسه
+        این متد پس از ذخیره/به‌روزرسانی صورت جلسه فراخوانی می‌شود
+        """
+        try:
+            from sooratvaziat.models import DetailedMeasurement
+            
+            # دریافت تمام آیتم‌های فهرست بهایی که در این صورت جلسه استفاده شده‌اند
+            price_list_items = PriceListItem.objects.filter(
+                session_items__measurement_session_number=self,
+                session_items__is_active=True
+            ).distinct()
+            
+            for price_list_item in price_list_items:
+                # ایجاد یا به‌روزرسانی ریز متره برای این آیتم و پروژه
+                DetailedMeasurement.update_or_create_for_project(
+                    project=self.project,
+                    price_list_item=price_list_item
+                )
+            
+            # همچنین به‌روزرسانی خلاصه مالی پروژه
+            self.update_project_financial_summary()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"خطا در به‌روزرسانی ریز متره‌ها برای صورت جلسه {self.id}: {str(e)}")
+            return False
+
+    def update_project_financial_summary(self):
+        """
+        به‌روزرسانی خلاصه مالی پروژه پس از تغییرات صورت جلسه
+        """
+        try:
+            from sooratvaziat.models import ProjectFinancialSummary
+            
+            # ایجاد یا به‌روزرسانی خلاصه مالی پروژه
+            summary, created = ProjectFinancialSummary.objects.get_or_create(
+                project=self.project
+            )
+            summary.calculate_project_totals()
+            summary.save()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"خطا در به‌روزرسانی خلاصه مالی پروژه {self.project.id}: {str(e)}")
+            return False
+
+    def recalculate_session_totals(self):
+        """
+        محاسبه مجدد مجموع‌های این صورت جلسه
+        """
+        try:
+            from django.db.models import Sum
+            
+            # محاسبه مجموع‌ها از آیتم‌های فعال
+            totals = self.items.filter(is_active=True).aggregate(
+                total_quantity=Sum('quantity'),
+                total_amount=Sum('item_total'),
+                items_count=Count('id')
+            )
+            
+            # به‌روزرسانی FinancialStatus اگر وجود دارد
+            if hasattr(self, 'financial_status'):
+                self.financial_status.total_quantity = totals['total_quantity'] or Decimal('0.00')
+                self.financial_status.total_amount = totals['total_amount'] or Decimal('0.00')
+                self.financial_status.active_items_count = totals['items_count'] or 0
+                self.financial_status.calculate_totals()
+                self.financial_status.save()
+            
+            return totals
+            
+        except Exception as e:
+            logger.error(f"خطا در محاسبه مجدد مجموع‌های صورت جلسه {self.id}: {str(e)}")
+            return None
 
     # ========== METODS FOR REPORTING ==========
     
@@ -237,6 +299,17 @@ class MeasurementSession(models.Model):
                     'formatted_sub_total_amount': self._format_number(sub_group['sub_total_amount']),
                 })
             
+            formatted_groups.append({
+                'row_number': group['row_number'],
+                'description': group['description'],
+                'unit': group['unit'],
+                'unit_price': group['unit_price'],
+                'sub_rows': formatted_sub_rows,
+                'total_quantity': group['total_quantity'],
+                'total_amount': group['total_amount'],
+                'formatted_total_quantity': self._format_number(group['total_quantity']),
+                'formatted_total_amount': self._format_number(group['total_amount']),
+            })
         
         return formatted_groups
     
@@ -244,7 +317,7 @@ class MeasurementSession(models.Model):
         """
         خلاصه بر اساس آیتم‌های فهرست بها (بدون تفکیک ردیف)
         """
-        from django.db.models import Sum
+        from django.db.models import Sum, Count
         
         summary_data = self.items.filter(is_active=True).values(
             'pricelist_item__row_number',
@@ -310,6 +383,9 @@ class MeasurementSession(models.Model):
         """حذف نرم"""
         self.is_active = False
         self.save()
+        
+        # به‌روزرسانی ریز متره‌ها پس از حذف
+        self.update_detailed_measurements()
 
 class MeasurementSessionItem(models.Model):
     """
@@ -419,6 +495,8 @@ class MeasurementSessionItem(models.Model):
         verbose_name="فعال/غیرفعال"
     )
     
+    is_applied = models.BooleanField(default=False, verbose_name='اعمال شده')
+    
     # لاگ‌گیری
     created_at = models.DateTimeField(
         auto_now_add=True, 
@@ -474,10 +552,24 @@ class MeasurementSessionItem(models.Model):
         
         super().save(*args, **kwargs)
         
-        # به‌روزرسانی تعداد آیتم‌های صورت‌جلسه
+        # به‌روزرسانی تعداد آیتم‌های صورت‌جلسه و ریز متره‌ها
         if self.measurement_session_number:
-            self.measurement_session_number.save(user=user)
+            # به‌روزرسانی تعداد آیتم‌ها در صورت جلسه
+            session = self.measurement_session_number
+            session.items_count = session.items.filter(is_active=True).count()
+            session.save(user=user)
     
+    def delete(self, *args, **kwargs):
+        """حذف نرم"""
+        session = self.measurement_session_number
+        self.is_active = False
+        self.save()
+        
+        # به‌روزرسانی صورت جلسه و ریز متره‌ها پس از حذف
+        if session:
+            session.items_count = session.items.filter(is_active=True).count()
+            session.save()
+
     def _get_price_from_pricelist(self):
         """استخراج قیمت از PriceListItem"""
         pl = self.pricelist_item
@@ -520,11 +612,6 @@ class MeasurementSessionItem(models.Model):
         """سازگاری با کدهای قدیمی"""
         return self.unit_price
     
-    def delete(self, *args, **kwargs):
-        """حذف نرم"""
-        self.is_active = False
-        self.save()
-    
     def get_display_info(self):
         """اطلاعات نمایشی برای template"""
         return {
@@ -549,6 +636,54 @@ class MeasurementSessionItem(models.Model):
         except:
             return "۰"
 
+    def create_revision(self, edited_by, revision_reason, **kwargs):
+        """
+        ایجاد Revision برای آیتم
+        """
+        from .models import ItemRevision  # اگر مدل Revision جداگانه دارید
+        
+        revision = ItemRevision.objects.create(
+            session_item=self,
+            edited_by=edited_by,
+            revision_reason=revision_reason,
+            old_length=self.length,
+            old_width=self.width,
+            old_height=self.height,
+            old_count=self.count,
+            old_notes=self.notes,
+            new_length=kwargs.get('new_length', self.length),
+            new_width=kwargs.get('new_width', self.width),
+            new_height=kwargs.get('new_height', self.height),
+            new_count=kwargs.get('new_count', self.count),
+            new_notes=kwargs.get('new_notes', self.notes),
+            revision_date=timezone.now()
+        )
+        return revision
+    
+    def has_pending_revisions(self):
+        """بررسی وجود Revisionهای در انتظار تأیید"""
+        try:
+            # اگر فیلد is_applied وجود دارد
+            return self.revisions.filter(is_applied=False).exists()
+        except FieldError:
+            # اگر فیلد is_applied وجود ندارد، از تاریخ ایجاد استفاده کنید
+            # یا به سادگی همه revisionها را در نظر بگیرید
+            return self.revisions.exists()
+    
+    def get_active_revisions(self):
+        """دریافت revisionهای فعال"""
+        try:
+            return self.revisions.filter(is_applied=False)
+        except FieldError:
+            return self.revisions.all()
+
+    def get_latest_revision(self):
+        """دریافت آخرین Revision"""
+        try:
+            return self.revisions.filter(is_applied=False).order_by('-created_at').first()
+        except FieldError:
+            return self.revisions.order_by('-created_at').first()
+    
 # مدل برای ثبت تغییرات متره با خط خوردگی
 class MeasurementRevision(models.Model):
     """
@@ -606,7 +741,7 @@ class MeasurementRevision(models.Model):
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    is_applied = models.BooleanField(default=False, verbose_name='اعمال شده')
     class Meta:
         verbose_name = _('نسخه متره')
         verbose_name_plural = _('نسخه‌های متره')
@@ -619,13 +754,27 @@ class DetailedMeasurement(models.Model):
     """
     مدل ریز متره کل - مجموع‌گیری از تمام صورت‌جلسات بر اساس آیتم فهرست بها
     """
+    
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='detailed_measurements',
+        verbose_name="پروژه مرتبط"
+    )
+    
     price_list_item = models.OneToOneField(
         PriceListItem, 
         on_delete=models.CASCADE, 
-        related_name='detailed_measurement',
+        related_name='project_measurements',
         verbose_name="آیتم فهرست بها"
     )
     
+    # اطلاعات رشته
+    discipline = models.CharField(
+        max_length=2,
+        choices=DisciplineChoices.choices,
+        verbose_name="رشته"
+    )
     # مجموع‌ها از تمام صورت‌جلسات (بر اساس آیتم فهرست بها)
     total_quantity = models.DecimalField(
         max_digits=15, 
@@ -653,11 +802,6 @@ class DetailedMeasurement(models.Model):
         verbose_name="تعداد ردیف‌ها",
         help_text="تعداد کل ردیف‌های مرتبط با این آیتم"
     )
-    projects_count = models.PositiveIntegerField(
-        default=0, 
-        verbose_name="تعداد پروژه‌ها",
-        help_text="تعداد پروژه‌های مختلف"
-    )
     
     # فیلدهای کمکی
     unit_price = models.DecimalField(
@@ -677,52 +821,89 @@ class DetailedMeasurement(models.Model):
     history = HistoricalRecords()
     
     class Meta:
-        verbose_name = "ریز متره کل"
-        verbose_name_plural = "ریز متره‌های کل"
+        verbose_name = "ریز متره پروژه"
+        verbose_name_plural = "ریز متره‌های پروژه"
         ordering = ['price_list_item__row_number']
+        unique_together = ['project', 'price_list_item']
     
     def __str__(self):
         return f"ریز متره {self.price_list_item.row_number} - {self.total_quantity}"
     
-    def update_from_sessions(self, projects=None):
+    def update_from_project_sessions(self):
         """
-        به‌روزرسانی از sessions - با فیلتر projects
-        """
-        from .models import MeasurementSessionItem
+        به‌روزرسانی ریز متره از صورت‌جلسات این پروژه
+        """        
+        items = MeasurementSessionItem.objects.filter(
+            measurement_session_number__project=self.project,
+            measurement_session_number__is_active=True,
+            pricelist_item=self.price_list_item,
+            is_active=True
+        )
         
-        if not self.price_list_item:
-            return
-        
-        # فیلتر projects اگر مشخص شده
-        if projects:
-            items = MeasurementSessionItem.objects.filter(
-                measurement_session_number__project__in=projects,
-                pricelist_item=self.price_list_item,
-                is_active=True
-            )
-        else:
-            items = MeasurementSessionItem.objects.filter(
-                pricelist_item=self.price_list_item,
-                is_active=True
-            )
         # محاسبه مجموع‌ها
-        total_qty = sum(item.get_total_item_amount() or 0 for item in items)
+        total_qty = Decimal('0.00')
+        total_amt = Decimal('0.00')
         
-        # آمار اضافی
+        for item in items:
+            item_qty = item.get_total_item_amount() or Decimal('0.00')
+            item_amt = item.item_total or Decimal('0.00')
+            total_qty += item_qty
+            total_amt += item_amt
+        
+        # آمار
         sessions_count = items.values('measurement_session_number').distinct().count()
-        projects_count = items.values('measurement_session_number__project').distinct().count()
+        items_count = items.count()
         
+        # به‌روزرسانی فیلدها
         self.total_quantity = total_qty
+        self.total_amount = total_amt
         self.sessions_count = sessions_count
-        self.projects_count = projects_count
+        self.items_count = items_count
+        self.unit_price = self._get_unit_price()
+        self.discipline = self.price_list_item.price_list.discipline_choice
         self.last_updated = timezone.now()
         
-        self.save(update_fields=[
-            'total_quantity', 'sessions_count', 'projects_count', 'last_updated'
-        ])
+        self.save()
+        
+        # به‌روزرسانی فیلدها
+        self.total_quantity = total_qty
+        self.total_amount = total_amt
+        self.sessions_count = sessions_count
+        self.items_count = items_count
+        self.unit_price = self._get_unit_price()
+        self.discipline = self.price_list_item.price_list.discipline_choice
+        self.last_updated = timezone.now()
+        
+        self.save()
+    
+    @classmethod
+    def update_or_create_for_project(cls, project, price_list_item):
+        """ایجاد یا به‌روزرسانی ریز متره برای پروژه و آیتم فهرست بها"""
+        obj, created = cls.objects.get_or_create(
+            project=project,
+            price_list_item=price_list_item,
+            defaults={'discipline': price_list_item.price_list.discipline_choice}
+        )
+        obj.update_from_project_sessions()
+        return obj, created
+    
+    @classmethod
+    def update_all_for_project(cls, project):
+        """به‌روزرسانی تمام ریز متره‌های یک پروژه"""
+        # یافتن تمام آیتم‌های فهرست بهایی که در صورت جلسات این پروژه استفاده شده‌اند
+        used_items = PriceListItem.objects.filter(
+            session_items__measurement_session_number__project=project,
+            session_items__measurement_session_number__is_active=True,
+            session_items__is_active=True
+        ).distinct()
+        
+        for item in used_items:
+            cls.update_or_create_for_project(project, item)
+        
+        return used_items.count()            
     
     def _get_unit_price(self):
-        """استخراج قیمت واحد"""
+        """استخراج قیمت واحد از PriceListItem"""
         pl = self.price_list_item
         for field in ['price', 'unit_price', 'rate', 'baha']:
             if hasattr(pl, field):
@@ -735,11 +916,12 @@ class DetailedMeasurement(models.Model):
         return Decimal('0.00')
     
     def get_breakdown_by_session(self):
-        """تفکیک بر اساس صورت‌جلسات"""
+        """تفکیک بر اساس صورت‌جلسات این پروژه"""
         from django.db.models import Sum
         
         return MeasurementSessionItem.objects.filter(
             pricelist_item=self.price_list_item,
+            measurement_session_number__project=self.project,
             is_active=True,
             measurement_session_number__is_active=True
         ).values(
@@ -771,10 +953,164 @@ class DetailedMeasurement(models.Model):
     def _format_number(value):
         """فرمت کردن عدد"""
         try:
+            if isinstance(value, Decimal):
+                v = int(value.quantize(Decimal('1')))
+            else:
+                v = int(value)
+            return f"{v:,}".replace(",", "٬")
+        except:
+            return "۰"
+
+class MeasurementSummary(models.Model):
+    """
+    جدول خلاصه‌ی آیتم‌های فهرست بها - فقط جمع‌های نهایی
+    """
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='price_list_summaries',
+        verbose_name="پروژه"
+    )
+    price_list_item = models.ForeignKey(
+        PriceListItem,
+        on_delete=models.CASCADE,
+        related_name='project_summaries',
+        verbose_name="آیتم فهرست بها"
+    )
+    
+    # جمع‌های نهایی
+    total_quantity = models.DecimalField(
+        max_digits=15, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="مجموع مقدار"
+    )
+    total_amount = models.DecimalField(
+        max_digits=18, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="مجموع مبلغ"
+    )
+    
+    # اطلاعات نمایشی
+    unit_price = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0,
+        verbose_name="قیمت واحد"
+    )
+    
+    # آمار
+    sessions_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="تعداد صورت‌جلسات"
+    )
+    items_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="تعداد ردیف‌ها"
+    )
+    
+    # زمان‌ها
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "خلاصه آیتم فهرست بها"
+        verbose_name_plural = "خلاصه آیتم‌های فهرست بها"
+        unique_together = ['project', 'price_list_item']
+        ordering = ['price_list_item__row_number']
+    
+    def __str__(self):
+        return f"خلاصه {self.price_list_item.row_number} - {self.project.project_name}"
+    
+    def update_summary(self):
+        """به‌روزرسانی خلاصه از صورت‌جلسات"""
+        from django.db.models import Sum, Count
+        
+        items_data = MeasurementSessionItem.objects.filter(
+            measurement_session_number__project=self.project,
+            pricelist_item=self.price_list_item,
+            is_active=True,
+            measurement_session_number__is_active=True
+        ).aggregate(
+            total_qty=Sum('quantity'),
+            total_amt=Sum('item_total'),
+            sessions_count=Count('measurement_session_number', distinct=True),
+            items_count=Count('id')
+        )
+        
+        self.total_quantity = items_data['total_qty'] or Decimal('0.00')
+        self.total_amount = items_data['total_amt'] or Decimal('0.00')
+        self.sessions_count = items_data['sessions_count'] or 0
+        self.items_count = items_data['items_count'] or 0
+        self.unit_price = self._get_unit_price()
+        
+        self.save()
+    
+    def _get_unit_price(self):
+        """استخراج قیمت واحد"""
+        pl = self.price_list_item
+        for field in ['price', 'unit_price', 'rate', 'baha']:
+            if hasattr(pl, field):
+                value = getattr(pl, field)
+                if value is not None:
+                    try:
+                        return Decimal(str(value)).quantize(Decimal('0.00'))
+                    except:
+                        continue
+        return Decimal('0.00')
+    
+    def get_absolute_url(self):
+        """لینک به صفحه ریز متره جزئیات"""
+        from django.urls import reverse
+        return reverse('detailed_measurement_view', kwargs={
+            'project_id': self.project.id,
+            'price_list_item_id': self.price_list_item.id
+        })
+    
+    @property
+    def display_info(self):
+        """اطلاعات نمایشی"""
+        return {
+            'row_number': self.price_list_item.row_number,
+            'description': self.price_list_item.description,
+            'unit': self.price_list_item.unit,
+            'unit_price': self.unit_price,
+            'total_quantity': self.total_quantity,
+            'total_amount': self.total_amount,
+            'formatted_unit_price': self._format_number(self.unit_price),
+            'formatted_total_quantity': self._format_number(self.total_quantity),
+            'formatted_total_amount': self._format_number(self.total_amount),
+            'sessions_count': self.sessions_count,
+        }
+    
+    @staticmethod
+    def _format_number(value):
+        """فرمت عدد"""
+        try:
             v = int(value.quantize(Decimal('1')))
             return f"{v:,}".replace(",", "٬")
         except:
             return "۰"
+
+    @classmethod
+    def update_or_create_for_project(cls, project):
+        """ایجاد یا به‌روزرسانی تمام خلاصه‌های یک پروژه"""
+        # پیدا کردن تمام آیتم‌های فهرست بهایی که در پروژه استفاده شده‌اند
+        used_items = PriceListItem.objects.filter(
+            session_items__measurement_session_number__project=project,
+            session_items__measurement_session_number__is_active=True,
+            session_items__is_active=True
+        ).distinct()
+        
+        for item in used_items:
+            obj, created = cls.objects.get_or_create(
+                project=project,
+                price_list_item=item
+            )
+            obj.update_summary()
+        
+        return used_items.count()
 
 class FinancialStatus(models.Model):
     """
@@ -1475,58 +1811,6 @@ class DetailedFinancialReport(models.Model):
         """محاسبه خودکار"""
         self.calculate_item_financials()
         super().save(*args, **kwargs)
-
-# ========== TOOLS HELPER CLASSES ==========
-class DetailedFinancialReport(models.Model):
-    # ... existing fields ...
-    
-    def initialize_from_item(self):
-        """ایجاد اولیه از آیتم"""
-        self.total_quantity = Decimal('0')
-        self.total_amount = Decimal('0')
-        self.updated_at = timezone.now()
-        self.save(update_fields=['total_quantity', 'total_amount', 'updated_at'])
-    
-    def update_amounts(self):
-        """به‌روزرسانی مقادیر از آیتم‌های session"""
-        from .models import MeasurementSessionItem
-        
-        if not self.price_list_item or not self.project:
-            return
-        
-        # جمع‌آوری از تمام sessions پروژه
-        items = MeasurementSessionItem.objects.filter(
-            measurement_session_number__project=self.project,
-            pricelist_item=self.price_list_item,
-            is_active=True
-        )
-        total_qty = sum(item.get_total_item_amount() or 0 for item in items)
-        unit_price = self._get_unit_price()
-        total_amt = total_qty * unit_price
-        
-        self.total_quantity = total_qty
-        self.total_amount = total_amt
-        self.item_count = items.count()
-        self.updated_at = timezone.now()
-        
-        self.save(update_fields=[
-            'total_quantity', 'total_amount', 'item_count', 'updated_at'
-        ])
-    
-    def _get_unit_price(self):
-        """استخراج قیمت واحد"""
-        if not self.price_list_item:
-            return Decimal('0')
-        
-        for field in ['price', 'unit_price', 'rate', 'baha']:
-            if hasattr(self.price_list_item, field):
-                value = getattr(self.price_list_item, field)
-                if value is not None:
-                    try:
-                        return Decimal(str(value))
-                    except:
-                        continue
-        return Decimal('0')
 
 class FinancialReportGenerator:
     """

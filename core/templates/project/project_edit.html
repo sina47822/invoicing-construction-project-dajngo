@@ -164,6 +164,32 @@
                             </div>
                             
                             <div class="col-md-6">
+                                <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.status.label }}
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.status.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">وضعیت فعلی پروژه</div>
+                            </div>
+                            <!-- ردیف پنجم: شماره قرارداد و وضعیت -->
+                            <div class="col-md-4">
+                                    <label for="{{ form.contract_number.id_for_label }}" class="form-label fw-semibold">
+                                        {{ form.contract_number.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.contract_number }}
+                                    {% if form.contract_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.contract_number.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                <div class="form-text">مثال: 1403/001</div>
+                            </div>
+                        
+                            <div class="col-md-4">
                                 <label for="{{ form.contract_amount.id_for_label }}" class="form-label fw-semibold">
                                     {{ form.contract_amount.label }} <span class="text-danger">*</span>
                                 </label>
@@ -174,6 +200,19 @@
                                     </div>
                                 {% endif %}
                                 <div class="form-text">به ریال - مثال: 1,500,000,000</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="{{ form.vat_percentage.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.vat_percentage.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.vat_percentage }}
+                                {% if form.vat_percentage.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.vat_percentage.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text"> - مثال: مالیات بر ارزش افزوده 10%</div>
                             </div>
                             
                             <!-- ردیف چهارم: موقعیت جغرافیایی -->
@@ -214,35 +253,6 @@
                                     </div>
                                 {% endif %}
                                 <div class="form-text">شهر محل اجرای پروژه</div>
-                            </div>
-                            
-                            <!-- ردیف پنجم: شماره قرارداد و وضعیت -->
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    {{ form.contract_number }}
-                                    <label for="{{ form.contract_number.id_for_label }}">
-                                        {{ form.contract_number.label }} <span class="text-danger">*</span>
-                                    </label>
-                                    {% if form.contract_number.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.contract_number.errors.0 }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="form-text">مثال: 1403/001</div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">
-                                    {{ form.status.label }}
-                                </label>
-                                {{ form.status }}
-                                {% if form.status.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.status.errors.0 }}
-                                    </div>
-                                {% endif %}
-                                <div class="form-text">وضعیت فعلی پروژه</div>
                             </div>
                             
                             <!-- ردیف ششم: فایل قرارداد -->
@@ -292,10 +302,18 @@
                                     </div>
                                     <div class="card-body">
                                         <div class="row g-3">
+                                            <!-- کارفرما -->
                                             <div class="col-md-6">
-                                                <label for="{{ form.employer_user.id_for_label }}" class="form-label fw-semibold">
-                                                    {{ form.employer_user.label }}
-                                                </label>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label for="{{ form.employer_user.id_for_label }}" class="form-label fw-semibold mb-0">
+                                                        {{ form.employer_user.label }}
+                                                    </label>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                            data-bs-toggle="modal" data-bs-target="#createUserModal"
+                                                            data-role="employer">
+                                                        <i class="bi bi-person-plus me-1"></i>ایجاد کاربر جدید
+                                                    </button>
+                                                </div>
                                                 {{ form.employer_user }}
                                                 {% if form.employer_user.errors %}
                                                     <div class="invalid-feedback d-block">
@@ -305,10 +323,18 @@
                                                 <div class="form-text">کاربر با نقش کارفرما</div>
                                             </div>
                                             
+                                            <!-- مدیر طرح -->
                                             <div class="col-md-6">
-                                                <label for="{{ form.project_manager_user.id_for_label }}" class="form-label fw-semibold">
-                                                    {{ form.project_manager_user.label }}
-                                                </label>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label for="{{ form.project_manager_user.id_for_label }}" class="form-label fw-semibold mb-0">
+                                                        {{ form.project_manager_user.label }}
+                                                    </label>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                            data-bs-toggle="modal" data-bs-target="#createUserModal"
+                                                            data-role="project_manager">
+                                                        <i class="bi bi-person-plus me-1"></i>ایجاد کاربر جدید
+                                                    </button>
+                                                </div>
                                                 {{ form.project_manager_user }}
                                                 {% if form.project_manager_user.errors %}
                                                     <div class="invalid-feedback d-block">
@@ -318,10 +344,18 @@
                                                 <div class="form-text">کاربر با نقش مدیر طرح</div>
                                             </div>
                                             
+                                            <!-- مشاور -->
                                             <div class="col-md-6">
-                                                <label for="{{ form.consultant_user.id_for_label }}" class="form-label fw-semibold">
-                                                    {{ form.consultant_user.label }}
-                                                </label>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label for="{{ form.consultant_user.id_for_label }}" class="form-label fw-semibold mb-0">
+                                                        {{ form.consultant_user.label }}
+                                                    </label>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                            data-bs-toggle="modal" data-bs-target="#createUserModal"
+                                                            data-role="consultant">
+                                                        <i class="bi bi-person-plus me-1"></i>ایجاد کاربر جدید
+                                                    </button>
+                                                </div>
                                                 {{ form.consultant_user }}
                                                 {% if form.consultant_user.errors %}
                                                     <div class="invalid-feedback d-block">
@@ -331,10 +365,18 @@
                                                 <div class="form-text">کاربر با نقش مشاور</div>
                                             </div>
                                             
+                                            <!-- ناظر -->
                                             <div class="col-md-6">
-                                                <label for="{{ form.supervising_engineer_user.id_for_label }}" class="form-label fw-semibold">
-                                                    {{ form.supervising_engineer_user.label }}
-                                                </label>
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label for="{{ form.supervising_engineer_user.id_for_label }}" class="form-label fw-semibold mb-0">
+                                                        {{ form.supervising_engineer_user.label }}
+                                                    </label>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                            data-bs-toggle="modal" data-bs-target="#createUserModal"
+                                                            data-role="supervisor">
+                                                        <i class="bi bi-person-plus me-1"></i>ایجاد کاربر جدید
+                                                    </button>
+                                                </div>
                                                 {{ form.supervising_engineer_user }}
                                                 {% if form.supervising_engineer_user.errors %}
                                                     <div class="invalid-feedback d-block">
@@ -347,7 +389,6 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
                         
                         <!-- دکمه‌های ارسال -->
                         <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top">
@@ -375,6 +416,105 @@
     </div>
 </div>
 
+
+<!-- Modal for creating new user -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-black" id="createUserModalLabel">
+                    <i class="bi bi-person-plus me-1"></i>
+                    ایجاد کاربر جدید
+                </h5>
+                <button style="position: absolute; left: 20px;" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- نمایش پیام‌های سراسری در مودال -->
+                {% if messages %}
+                <div class="mb-3">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi {% if message.tags == 'success' %}bi-check-circle text-success{% elif message.tags == 'error' %}bi-exclamation-triangle text-danger{% elif message.tags == 'warning' %}bi-exclamation-triangle text-warning{% else %}bi-info-circle text-info{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- فرم ایجاد کاربر -->
+                <form id="userCreateForm" method="post" action="{% url 'accounts:user_create' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="role" id="id_modal_role">
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        کاربر جدید ایجاد شده به لیست کاربران اضافه خواهد شد.
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="id_username" class="form-label">نام کاربری *</label>
+                            <input type="text" class="form-control" id="id_username" name="username" required>
+                            <div class="form-text">نام کاربری منحصر به فرد</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_email" class="form-label">ایمیل *</label>
+                            <input type="email" class="form-control" id="id_email" name="email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_first_name" class="form-label">نام *</label>
+                            <input type="text" class="form-control" id="id_first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_last_name" class="form-label">نام خانوادگی *</label>
+                            <input type="text" class="form-control" id="id_last_name" name="last_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_password1" class="form-label">رمز عبور *</label>
+                            <input type="password" class="form-control" id="id_password1" name="password1" required>
+                            <div class="form-text">حداقل ۸ کاراکتر</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_password2" class="form-label">تکرار رمز عبور *</label>
+                            <input type="password" class="form-control" id="id_password2" name="password2" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_phone_number" class="form-label">شماره تلفن</label>
+                            <input type="text" class="form-control" id="id_phone_number" name="phone_number">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_national_id" class="form-label">کد ملی</label>
+                            <input type="text" class="form-control" id="id_national_id" name="national_id">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_company_name" class="form-label">نام شرکت/سازمان</label>
+                            <input type="text" class="form-control" id="id_company_name" name="company_name">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_position" class="form-label">سمت</label>
+                            <input type="text" class="form-control" id="id_position" name="position">
+                        </div>
+                    </div>
+                    
+                    <div id="formErrors" class="alert alert-danger mt-3 d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <!-- اضافه کردن لینک به لیست کاربران در فوتر مودال -->
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-info me-auto">
+                    <i class="bi bi-people me-2"></i>مدیریت کاربران
+                </a>
+                <button type="button" class="btn btn-primary" id="submitCreateUserForm">
+                    <i class="bi bi-person-plus me-2"></i>
+                    ایجاد کاربر
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="application/json" id="province-cities-data">
     {{ province_cities_json|safe }}
 </script>
@@ -385,7 +525,7 @@
 .form-control, .form-select {
     border-radius: 8px;
     border: 1.5px solid #dee2e6;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 2rem;
 }
 
 .form-control:focus, .form-select:focus {
@@ -404,6 +544,28 @@
 .invalid-feedback {
     color: #dc3545;
     font-size: 0.875rem;
+}
+
+.btn-outline-info {
+    background-colrgb(187, 187, 187)42f0;
+    border-color: #0dcaf0;
+    color: #949494;
+}
+
+/* استایل برای دکمه‌های جدید */
+.btn-outline-info:hover {
+    background-color: #0d42f0;
+    color: white;
+}
+
+/* استایل برای لینک‌های alert */
+.alert-link {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+.alert-link:hover {
+    color: #0a58ca;
 }
 </style>
 {% endblock %}
@@ -580,10 +742,285 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // مدیریت مودال ایجاد کاربر - نسخه ساده‌تر
+    function initializeUserCreationModal() {
+        const createUserModal = document.getElementById('createUserModal');
+        if (!createUserModal) {
+            console.log('❌ createUserModal not found');
+            return;
+        }
+        
+        console.log('✅ User creation modal found');
+        
+        // نقش به فیلد mapping
+        const roleToFieldMap = {
+            'employer': 'employer_user',
+            'project_manager': 'project_manager_user', 
+            'consultant': 'consultant_user',
+            'supervisor': 'supervising_engineer_user'
+        };
+        
+        // هنگامی که مودال باز می‌شود
+        createUserModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const role = button.getAttribute('data-role');
+            
+            console.log('🎯 Opening modal for role:', role);
+            
+            // تنظیم نقش در مودال
+            const roleInput = document.getElementById('id_modal_role');
+            if (roleInput) {
+                roleInput.value = role;
+                console.log('✅ Set role input to:', role);
+            }
+            
+            // پاک کردن فرم
+            const form = document.getElementById('userCreateForm');
+            if (form) {
+                form.reset();
+            }
+            
+            // پاک کردن خطاها
+            const errorDiv = document.getElementById('formErrors');
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+                errorDiv.innerHTML = '';
+            }
+        });
+        
+        // ارسال فرم ایجاد کاربر
+        const userCreateForm = document.getElementById('userCreateForm');
+        const submitUserBtn = document.getElementById('submitCreateUserForm');
+        
+        if (userCreateForm && submitUserBtn) {
+            submitUserBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('📤 Submitting user creation form...');
+                
+                const originalText = submitUserBtn.innerHTML;
+                submitUserBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>در حال ایجاد...';
+                submitUserBtn.disabled = true;
+                
+                const formData = new FormData(userCreateForm);
+                
+                fetch(userCreateForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ User creation response:', data);
+                    if (data.success) {
+                        // بستن مودال
+                        const modal = bootstrap.Modal.getInstance(createUserModal);
+                        modal.hide();
+                        
+                        // نمایش پیام موفقیت
+                        showToast('success', 'کاربر جدید با موفقیت ایجاد شد.');
+                        
+                        // افزودن کاربر جدید به select مربوطه
+                        const role = document.getElementById('id_modal_role').value;
+                        addUserToSelect(role, data.user_id, data.full_name || data.username);
+                    } else {
+                        // نمایش خطاها
+                        showFormErrors(data.errors);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error creating user:', error);
+                    showToast('error', 'خطا در ایجاد کاربر. لطفاً دوباره تلاش کنید.');
+                })
+                .finally(() => {
+                    submitUserBtn.innerHTML = originalText;
+                    submitUserBtn.disabled = false;
+                });
+            });
+        }
+
+        // نمایش خطاهای فرم
+        function showFormErrors(errors) {
+            const errorDiv = document.getElementById('formErrors');
+            if (!errorDiv) {
+                // اگر errorDiv وجود ندارد، ایجادش کن
+                const modalBody = document.querySelector('#createUserModal .modal-body');
+                const newErrorDiv = document.createElement('div');
+                newErrorDiv.id = 'formErrors';
+                newErrorDiv.className = 'alert alert-danger mt-3';
+                modalBody.appendChild(newErrorDiv);
+            }
+            
+            const errorDivFinal = document.getElementById('formErrors');
+            let errorHtml = '<strong>خطاهای زیر رخ داده است:</strong><ul class="mb-0 mt-2">';
+            
+            if (typeof errors === 'object') {
+                for (const field in errors) {
+                    if (errors.hasOwnProperty(field)) {
+                        const fieldErrors = Array.isArray(errors[field]) ? errors[field] : [errors[field]];
+                        fieldErrors.forEach(error => {
+                            errorHtml += `<li>${error}</li>`;
+                        });
+                    }
+                }
+            } else if (typeof errors === 'string') {
+                errorHtml += `<li>${errors}</li>`;
+            }
+            
+            errorHtml += '</ul>';
+            
+            errorDivFinal.innerHTML = errorHtml;
+            errorDivFinal.classList.remove('d-none');
+            
+            // اسکرول به بالای خطاها
+            errorDivFinal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // افزودن کاربر جدید به select
+        function addUserToSelect(role, userId, userName) {
+            const fieldName = roleToFieldMap[role];
+            if (!fieldName) {
+                console.error('❌ Unknown role:', role);
+                return;
+            }
+            
+            const selectId = `id_${fieldName}`;
+            const selectElement = document.getElementById(selectId);
+            
+            if (selectElement) {
+                console.log('➕ Adding user to select:', selectId, userId, userName);
+                
+                // حذف گزینه خالی اگر وجود دارد
+                const emptyOption = selectElement.querySelector('option[value=""]');
+                if (emptyOption) {
+                    emptyOption.remove();
+                }
+                
+                // بررسی وجود کاربر در لیست
+                const existingOption = selectElement.querySelector(`option[value="${userId}"]`);
+                if (!existingOption) {
+                    // افزودن کاربر جدید
+                    const newOption = document.createElement('option');
+                    newOption.value = userId;
+                    newOption.textContent = userName;
+                    selectElement.appendChild(newOption);
+                }
+                
+                // انتخاب کاربر جدید
+                selectElement.value = userId;
+                
+                // نمایش موفقیت
+                showToast('success', `کاربر "${userName}" به لیست اضافه شد`);
+            } else {
+                console.error('❌ Select element not found:', selectId);
+            }
+        }
+    }
+
+    // نمایش نوتیفیکیشن - نسخه ساده
+    function showToast(type, message) {
+        // ایجاد یک نوتیفیکیشن ساده
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            <i class="bi ${type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // حذف خودکار بعد از 5 ثانیه
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }
+
+    // نمایش خطاهای فرم
+    function showFormErrors(errors) {
+        const errorDiv = document.getElementById('formErrors');
+        if (!errorDiv) {
+            // اگر errorDiv وجود ندارد، ایجادش کن
+            const modalBody = document.querySelector('#createUserModal .modal-body');
+            const newErrorDiv = document.createElement('div');
+            newErrorDiv.id = 'formErrors';
+            newErrorDiv.className = 'alert alert-danger mt-3';
+            modalBody.appendChild(newErrorDiv);
+        }
+        
+        const errorDivFinal = document.getElementById('formErrors');
+        let errorHtml = '';
+        
+        if (errors.permission) {
+            // خطای مجوز - نمایش پیام واضح
+            errorHtml = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    <strong>مشکل دسترسی:</strong>
+                    <p class="mb-0 mt-2">${errors.permission.join(', ')}</p>
+                    <small class="d-block mt-2">
+                        برای ایجاد کاربر جدید، باید نقش "پیمانکار" یا "ادمین" داشته باشید.
+                        <a href="{% url 'accounts:user_list' %}" class="alert-link">مدیریت کاربران</a>
+                    </small>
+                </div>
+            `;
+        } else {
+            // خطاهای معمول فرم
+            errorHtml = '<strong>لطفاً خطاهای زیر را اصلاح کنید:</strong><ul class="mb-0 mt-2">';
+            
+            if (typeof errors === 'object') {
+                for (const field in errors) {
+                    if (errors.hasOwnProperty(field)) {
+                        const fieldErrors = Array.isArray(errors[field]) ? errors[field] : [errors[field]];
+                        fieldErrors.forEach(error => {
+                            // نمایش نام فیلد به فارسی
+                            const fieldNames = {
+                                'username': 'نام کاربری',
+                                'email': 'ایمیل', 
+                                'first_name': 'نام',
+                                'last_name': 'نام خانوادگی',
+                                'password1': 'رمز عبور',
+                                'password2': 'تکرار رمز عبور',
+                                'role': 'نقش',
+                                'general': 'عمومی',
+                                '__all__': 'خطای کلی'
+                            };
+                            const fieldName = fieldNames[field] || field;
+                            errorHtml += `<li><strong>${fieldName}:</strong> ${error}</li>`;
+                        });
+                    }
+                }
+            } else if (typeof errors === 'string') {
+                errorHtml += `<li>${errors}</li>`;
+            }
+            
+            errorHtml += '</ul>';
+        }
+        
+        errorDivFinal.innerHTML = errorHtml;
+        errorDivFinal.classList.remove('d-none');
+        
+        // اسکرول به بالای خطاها
+        errorDivFinal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
     // Initialize everything
     initializeDatepicker();
     initializeLocationFields();
     initializeFormValidation();
+    initializeUserCreationModal();
+    showToast();
+    showFormErrors();
     console.log('🎉 Form initialization completed!');
 });
 </script>

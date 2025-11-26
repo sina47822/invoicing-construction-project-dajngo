@@ -131,7 +131,16 @@ class Project(models.Model):
         verbose_name=_("مبلغ قرارداد"),
         help_text=_("مبلغ کل قرارداد به ریال")
     )
-
+    
+    # مالیات بر ارزش افزوده
+    vat_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=10.00,  # 10% مالیات
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name=_("درصد مالیات بر ارزش افزوده"),
+        help_text=_("درصد مالیات بر ارزش افزوده (مثال: 10)")
+    )
     # اطلاعات اضافی
     project_type = models.CharField(
         max_length=20,
@@ -331,7 +340,20 @@ class Project(models.Model):
             self.is_active = False
             self.deleted_at = timezone.now()
             self.save()
-
+    @property
+    def contract_amount_with_vat(self):
+        """محاسبه مبلغ قرارداد با احتساب مالیات"""
+        if self.contract_amount:
+            vat_amount = (self.contract_amount * self.vat_percentage) / 100
+            return self.contract_amount + vat_amount
+        return Decimal('0.00')
+    
+    @property
+    def formatted_contract_amount_with_vat(self):
+        """فرمت مبلغ قرارداد با مالیات"""
+        from sooratvaziat.utils import format_number_int
+        return format_number_int(self.contract_amount_with_vat)
+        
 class StatusReport(models.Model):
     """
     مدل صورت وضعیت - اصلاح شده

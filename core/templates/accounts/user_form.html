@@ -1,5 +1,6 @@
 <!-- templates/accounts/user_form.html -->
-{% extends 'layout/project_base.html' %}
+{% extends 'layout/profile_base.html' %}
+
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -57,13 +58,13 @@
         <div class="col-lg-8">
             <div class="card border-0 shadow-lg">
                 <div class="card-header bg-primary border-0">
-                    <h5 class="card-title mb-0 text-white">
-                        <i class="bi bi-person-plus text-white me-2"></i>
+                    <h5 class="card-title mb-0 text-black">
+                        <i class="bi bi-person-plus text-black me-2"></i>
                         اطلاعات کاربر جدید
                     </h5>
                 </div>
                 
-                <div class="card-body p-4">
+                <div class="card-body p-4 bg-black">
                     <form method="POST" id="userCreateForm" novalidate>
                         {% csrf_token %}
                         
@@ -236,7 +237,7 @@
 .form-control, .form-select {
     border-radius: 8px;
     border: 1.5px solid #dee2e6;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.5rem;
 }
 
 .form-control:focus, .form-select:focus {

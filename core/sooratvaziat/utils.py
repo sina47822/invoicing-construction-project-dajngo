@@ -1,3 +1,13 @@
+# sooratvaziat/utils.py
+from django.shortcuts import get_object_or_404  # این خط را اضافه کنید
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q
+from decimal import Decimal, ROUND_HALF_UP
+from project.models import Project
+from accounts.models import UserRole, ProjectUser
+import jdatetime
+from collections import OrderedDict, defaultdict
+
 def gregorian_to_jalali(dt, fmt="%Y/%m/%d %H:%M"):
     """
     گرفتن datetime (ممکن است naive یا aware) -> رشته جلالی طبق fmt.
@@ -118,7 +128,6 @@ def get_status_badge(status):
     }
     return status_map.get(status, 'bg-secondary')
 
-
 # توابع کمکی
 def get_project_statistics(project):
     """محاسبه آمار پروژه"""
@@ -154,7 +163,6 @@ def get_project_statistics(project):
         'total_documents': (sessions_stats['total_sessions'] or 0) + (payments_stats['total_payments'] or 0),
     }
 
-
 def calculate_financial_metrics(project):
     """محاسبه معیارهای مالی پروژه"""
     from decimal import Decimal
@@ -180,7 +188,6 @@ def calculate_financial_metrics(project):
         'billed_amount': total_measured,
         'remaining_amount': remaining,
     }
-
 
 def get_financial_summary(project):
     """دریافت خلاصه مالی پروژه"""
@@ -214,7 +221,6 @@ def get_financial_summary(project):
         'discipline_breakdown': breakdown,
         'get_discipline_breakdown': lambda: breakdown  # برای استفاده در تمپلیت
     }
-
 
 def get_recent_events(project, limit=5):
     """دریافت رویدادهای اخیر پروژه"""
@@ -258,7 +264,6 @@ def get_recent_events(project, limit=5):
         'activities': activities[:10]  # حداکثر 10 فعالیت
     }
 
-
 def get_project_warnings(project, financial_metrics):
     """دریافت هشدارهای پروژه"""
     warnings = []
@@ -287,7 +292,6 @@ def get_project_warnings(project, financial_metrics):
     
     return warnings
 
-
 def get_chart_data(project):
     """دریافت داده‌های نمودار"""
     from django.db.models import Sum
@@ -314,7 +318,6 @@ def get_chart_data(project):
         }
     }
 
-
 def calculate_project_duration(project):
     """محاسبه مدت زمان پروژه"""
     if project.start_date and project.end_date:
@@ -339,7 +342,6 @@ def calculate_project_duration(project):
         'formatted': 'نامشخص'
     }
 
-
 def get_last_activity(project):
     """دریافت آخرین فعالیت پروژه"""
     last_session = project.sooratvaziat_sessions.order_by('-created_at').first()
@@ -355,3 +357,66 @@ def get_last_activity(project):
         return max(activities)
     return project.created_at
 
+# projects/utils.py یا فایل مشابه
+
+def get_project_with_access(user, project_id):
+    """
+    دریافت پروژه با بررسی دسترسی کاربر - نسخه اصلاح شده برای ادمین/سوپریوزر
+    """
+    project = get_object_or_404(Project, pk=project_id, is_active=True)
+    
+    has_access = (
+        user.is_superuser or
+        UserRole.objects.filter(user=user, role='admin', is_active=True).exists() or
+        project.created_by == user or
+        ProjectUser.objects.filter(
+            project=project, 
+            user=user, 
+            is_active=True
+        ).exists()
+    )
+    
+    if not has_access:
+        raise PermissionDenied("شما دسترسی به این پروژه را ندارید")
+    
+    return project
+
+def get_user_project_role(user, project):
+    """
+    دریافت نقش کاربر در پروژه - نسخه اصلاح شده
+    """
+    if user.is_superuser:
+        return 'superuser'
+    
+    # بررسی نقش ادمین در UserRole
+    if UserRole.objects.filter(user=user, role='admin', is_active=True).exists():
+        return 'admin'
+    
+    if project.created_by == user:
+        return 'creator'
+    
+    try:
+        project_user = ProjectUser.objects.get(
+            project=project, 
+            user=user, 
+            is_active=True
+        )
+        return project_user.role
+    except ProjectUser.DoesNotExist:
+        return None
+
+def can_edit_directly(user, project):
+    """
+    بررسی آیا کاربر می‌تواند مستقیماً ویرایش کند
+    """
+    user_role = get_user_project_role(user, project)
+    # ادمین و سوپریوزر می‌توانند ویرایش کنند
+    return user_role in ['contractor', 'superuser', 'admin']
+
+def can_view_revisions(user, project):
+    """
+    بررسی آیا کاربر می‌تواند نسخه‌های اصلاح شده را ببیند
+    """
+    user_role = get_user_project_role(user, project)
+    # ادمین و سوپریوزر می‌توانند همه چیز را ببینند
+    return user_role in ['project_manager', 'employer', 'supervisor', 'consultant', 'superuser', 'admin']

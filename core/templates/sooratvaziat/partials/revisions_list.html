@@ -1,0 +1,42 @@
+<!-- templates/sooratvaziat/partials/revisions_list.html -->
+ 
+<div class="table-responsive">
+    <table class="table table-sm custom-table">
+        <thead>
+            <tr>
+                <th>تاریخ</th>
+                <th>ویرایش‌کننده</th>
+                <th>نقش</th>
+                <th>دلیل تغییر</th>
+                <th>مقادیر قبلی</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for revision in revisions %}
+            <tr>
+                <td>{{ revision.created_at|date:"Y/m/d H:i" }}</td>
+                <td>{{ revision.edited_by.get_full_name|default:revision.edited_by.username }}</td>
+                <td>
+                    <span class="badge bg-secondary">
+                        {{ revision.get_user_role_display|default:revision.user_role }}
+                    </span>
+                </td>
+                <td>{{ revision.revision_reason|default:"-" }}</td>
+                <td>
+                    <small>
+                        طول: {{ revision.old_length|default:"-" }}<br>
+                        عرض: {{ revision.old_width|default:"-" }}<br>
+                        ارتفاع: {{ revision.old_height|default:"-" }}<br>
+                        تعداد: {{ revision.old_count|default:"1" }}<br>
+                        مقدار: {{ revision.old_quantity|floatformat:2 }}
+                    </small>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center text-muted">هیچ تغییری ثبت نشده است</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

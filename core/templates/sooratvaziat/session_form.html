@@ -1,5 +1,3 @@
-<!-- templates/sooratvaziat/session_form.html -->
-
 {% extends 'layout/project_base.html' %}
 {% load humanize %}
 
@@ -11,7 +9,7 @@
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-file-alt me-2"></i>
+                    <i class="fas fa-edit me-2"></i>
                     {{ title }}
                 </h5>
             </div>
@@ -41,7 +39,6 @@
                                     {% endfor %}
                                 </div>
                                 {% endif %}
-                                <div class="form-text">اگر خالی باشد، شماره به صورت خودکار تولید می‌شود</div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -61,17 +58,28 @@
                         </div>
                     </div>
                     
-                    <!-- فیلتر و انتخاب فهرست بها -->
+                    <!-- فیلد رشته -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="{{ form.discipline_filter.id_for_label }}" class="form-label">
                                     {{ form.discipline_filter.label }}
                                 </label>
                                 {{ form.discipline_filter }}
+                                {% if form.discipline_filter.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.discipline_filter.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-6">
+                    </div>
+                    
+                    <!-- فیلد فهرست بها -->
+                    <div class="row">
+                        <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="{{ form.price_list.id_for_label }}" class="form-label">
                                     {{ form.price_list.label }}
@@ -135,14 +143,24 @@
                         {% endif %}
                     </div>
                     
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'sooratvaziat:session_list' project.pk %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-right me-1"></i>
-                            بازگشت به لیست
-                        </a>
-                        <button type="submit" class="btn btn-success">
+                    <div class="d-flex justify-content-between align-items-center py-3 px-4 bg-light rounded border">
+                        {% if session %}
+                            <!-- حالت ویرایش - بازگشت به جزئیات session -->
+                            <a href="{% url 'sooratvaziat:session_detail' project.pk session.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                بازگشت به جزئیات
+                            </a>
+                        {% else %}
+                            <!-- حالت ایجاد جدید - بازگشت به لیست sessions -->
+                            <a href="{% url 'sooratvaziat:session_list' project.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                بازگشت به لیست صورت جلسات
+                            </a>
+                        {% endif %}
+                        
+                        <button type="submit" class="btn text-white" style="background-color: #0d6efd;">
                             <i class="fas fa-save me-1"></i>
-                            ذخیره صورت جلسه
+                            {% if session %}به‌روزرسانی{% else %}ایجاد صورت جلسه{% endif %}
                         </button>
                     </div>
                 </form>
@@ -155,12 +173,60 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const disciplineFilter = document.getElementById('discipline-filter');
-    const priceListSelect = document.getElementById('price-list-select');
+    const disciplineFilter = document.getElementById('{{ form.discipline_filter.id_for_label }}');
+    const priceListSelect = document.getElementById('{{ form.price_list.id_for_label }}');
+    const form = document.getElementById('session-form');
     
-    // هنگام تغییر رشته
-    disciplineFilter.addEventListener('change', function() {
-        const discipline = this.value;
+    console.log('=== FORM EDIT DEBUG INFO ===');
+    console.log('Elements:', { 
+        disciplineFilter, 
+        priceListSelect,
+        form
+    });
+    
+    // تابع برای لاگ کردن اطلاعات فهرست بها
+    function logPriceListSelection() {
+        if (priceListSelect && priceListSelect.value) {
+            const selectedOption = priceListSelect.options[priceListSelect.selectedIndex];
+            console.log('📋 فهرست بها انتخاب شده:', {
+                id: priceListSelect.value,
+                text: selectedOption.text,
+                fullElement: selectedOption
+            });
+        } else {
+            console.log('❌ هیچ فهرست بهایی انتخاب نشده است');
+        }
+    }
+    
+    // تابع برای لاگ کردن اطلاعات کامل فرم
+    function logFormData() {
+        if (!form) return;
+        
+        const formData = new FormData(form);
+        const formDataObj = {};
+        
+        for (let [key, value] of formData.entries()) {
+            formDataObj[key] = value;
+        }
+        
+        console.log('📄 اطلاعات کامل فرم:', formDataObj);
+        console.log('🔍 مقادیر مهم:');
+        console.log('   - رشته (discipline_filter):', formDataObj['discipline_filter'] || 'تعیین نشده');
+        console.log('   - فهرست بها (price_list):', formDataObj['price_list'] || 'تعیین نشده');
+        console.log('   - شماره صورت جلسه:', formDataObj['session_number'] || 'تعیین نشده');
+        console.log('   - وضعیت:', formDataObj['status'] || 'تعیین نشده');
+        
+        return formDataObj;
+    }
+    
+    // تابع برای به روزرسانی فهرست‌های بها
+    function updatePriceLists(discipline) {
+        if (!priceListSelect) {
+            console.error('priceListSelect not found');
+            return;
+        }
+        
+        console.log('🔄 در حال به‌روزرسانی فهرست‌های بها برای رشته:', discipline);
         
         // پاک کردن options فعلی
         priceListSelect.innerHTML = '<option value="">-- لطفا منتظر بمانید --</option>';
@@ -169,38 +235,144 @@ document.addEventListener('DOMContentLoaded', function() {
         if (discipline) {
             // درخواست AJAX برای دریافت فهرست‌های بها
             fetch(`/sooratvaziat/get-price-lists/?discipline=${discipline}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('✅ دریافت فهرست‌های بها:', data);
                     priceListSelect.innerHTML = '<option value="">-- انتخاب فهرست بها --</option>';
                     
-                    data.forEach(priceList => {
-                        const option = document.createElement('option');
-                        option.value = priceList.id;
-                        option.textContent = priceList.discipline + (priceList.year ? ` (${priceList.year})` : '');
-                        priceListSelect.appendChild(option);
-                    });
+                    if (data && data.length === 0) {
+                        priceListSelect.innerHTML = '<option value="">-- فهرست بهایی برای این رشته یافت نشد --</option>';
+                        console.log('⚠️ هیچ فهرست بهایی برای رشته', discipline, 'یافت نشد');
+                    } else if (data) {
+                        data.forEach(priceList => {
+                            const option = document.createElement('option');
+                            option.value = priceList.id;
+                            // استفاده از رشته و سال برای نمایش
+                            const yearText = priceList.year ? `(${priceList.year})` : '';
+                            option.textContent = `${priceList.discipline} ${yearText}`;
+                            option.setAttribute('data-discipline', priceList.discipline_choice);
+                            priceListSelect.appendChild(option);
+                        });
+                        console.log(`📊 ${data.length} فهرست بها بارگذاری شد`);
+                    }
+                    
+                    // در حالت ویرایش، مقدار قبلی را انتخاب کن
+                    {% if session.price_list %}
+                        priceListSelect.value = "{{ session.price_list.pk }}";
+                        console.log('✏️ حالت ویرایش - فهرست بها قبلی انتخاب شد:', "{{ session.price_list.pk }}");
+                    {% endif %}
                     
                     priceListSelect.disabled = false;
+                    
+                    // پس از بارگذاری، اگر مقداری انتخاب شده آن را لاگ کن
+                    setTimeout(() => {
+                        if (priceListSelect.value) {
+                            logPriceListSelection();
+                        }
+                    }, 100);
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    console.error('❌ خطا در دریافت فهرست‌های بها:', error);
                     priceListSelect.innerHTML = '<option value="">-- خطا در دریافت داده‌ها --</option>';
+                    priceListSelect.disabled = false;
                 });
         } else {
             priceListSelect.innerHTML = '<option value="">-- ابتدا رشته را انتخاب کنید --</option>';
             priceListSelect.disabled = true;
+            console.log('ℹ️ رشته انتخاب نشده است');
         }
-    });
+    }
     
-    // مقدار اولیه اگر در حالت edit هستیم
-    {% if form.instance.pk %}
-        const initialDiscipline = "{{ form.instance.price_list.discipline_choice }}";
-        if (initialDiscipline) {
-            disciplineFilter.value = initialDiscipline;
-            // تریگر کردن رویداد change
-            disciplineFilter.dispatchEvent(new Event('change'));
+    // رویداد تغییر فهرست بها
+    if (priceListSelect) {
+        priceListSelect.addEventListener('change', function() {
+            console.log('🔄 تغییر فهرست بها تشخیص داده شد');
+            logPriceListSelection();
+        });
+    }
+    
+    // هنگام تغییر رشته
+    if (disciplineFilter) {
+        disciplineFilter.addEventListener('change', function() {
+            const selectedValue = this.value;
+            const selectedText = this.options[this.selectedIndex].text;
+            console.log('🎯 رشته انتخاب شده:', {
+                value: selectedValue,
+                text: selectedText
+            });
+            updatePriceLists(selectedValue);
+        });
+        
+        // مقدار اولیه را تنظیم کن
+        const initialFilterValue = disciplineFilter.value;
+        console.log('🏁 مقدار اولیه رشته:', initialFilterValue);
+        if (initialFilterValue) {
+            updatePriceLists(initialFilterValue);
         }
-    {% endif %}
+    } else {
+        console.error('❌ المنت رشته یافت نشد');
+    }
+    
+    // رویداد submit برای دیباگ
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('🚀 === فرم در حال ارسال است ===');
+            
+            // لاگ اطلاعات فرم
+            const formData = logFormData();
+            
+            // بررسی اعتبار داده‌ها قبل از ارسال
+            const disciplineValue = formData['discipline_filter'];
+            const priceListValue = formData['price_list'];
+            
+            console.log('🔍 بررسی نهایی مقادیر:');
+            console.log('   - رشته:', disciplineValue || '❌ تعیین نشده');
+            console.log('   - فهرست بها:', priceListValue || '❌ تعیین نشده');
+            
+            if (!disciplineValue || !priceListValue) {
+                console.warn('⚠️ هشدار: برخی فیلدهای ضروری پر نشده‌اند');
+                if (!disciplineValue) {
+                    console.error('❌ رشته انتخاب نشده است');
+                    alert('لطفا رشته را انتخاب کنید.');
+                    e.preventDefault();
+                    return;
+                }
+                if (!priceListValue) {
+                    console.error('❌ فهرست بها انتخاب نشده است');
+                    alert('لطفا فهرست بها را انتخاب کنید.');
+                    e.preventDefault();
+                    return;
+                }
+            } else {
+                console.log('✅ همه فیلدهای ضروری پر شده‌اند');
+            }
+            
+            setTimeout(() => {
+                console.log('📤 ارسال فرم به سرور...');
+            }, 100);
+        });
+    }
+    
+    // مقدار اولیه برای حالت edit
+    console.log('✏️ حالت ویرایش فعال است');
+    console.log('   - صورت جلسه:', "{{ session.session_number }}");
+    console.log('   - رشته قبلی:', "{{ session.discipline_choice }}");
+    console.log('   - فهرست بها قبلی:', "{{ session.price_list.pk }}" || 'ندارد');
+    
+    const initialDiscipline = "{{ session.discipline_choice }}";
+    if (initialDiscipline && disciplineFilter) {
+        disciplineFilter.value = initialDiscipline;
+        setTimeout(() => {
+            updatePriceLists(initialDiscipline);
+        }, 200);
+    }
+    
+    console.log('=== پایان اطلاعات دیباگ ===');
 });
 </script>
 {% endblock %}

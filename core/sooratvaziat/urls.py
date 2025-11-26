@@ -1,51 +1,48 @@
-# urls.py
 from django.urls import path
 from . import views
-from .views import (
-    search,
-    session_list, riz_metre_financial, 
-    riz_metre, MeasurementSessionView,  
-    project_financial_report, riz_metre_discipline_list,
-    riz_financial_discipline_list, project_financial_report_list
-)
 
-app_name = 'sooratvaziat' 
+app_name = 'sooratvaziat'
 
+# در urls.py
 urlpatterns = [
-    # path('riz_metre/<int:pk>/', riz_metre_discipline_list, name='riz_metre_discipline_list'),
-    # path('riz_metre/<int:pk>/<str:discipline_choice>/', riz_metre, name='riz_metre'),
-    path('riz_financial/<int:pk>/', riz_financial_discipline_list, name='riz_financial_discipline_list'),
-    path('riz_financial/<int:pk>/<str:discipline_choice>/', riz_metre_financial, name='riz_financial'),
-    path('sooratjalase/<int:pk>/', MeasurementSessionView, name='sooratjalase'),
-    # path('session_list/<int:pk>/', session_list, name='session_list'),
-    # path('detailed-session/<int:session_id>/', detailed_session, name='detailed_session'),
-    path('financial/', project_financial_report_list, name='project_financial_report_list'),
-    path('project/<int:pk>/financial-report/', views.project_financial_report, name='project_financial_report'),
-    # URL جدید برای جستجو
-    path('search/', search, name='search'),
-    path('search/<str:query>/', search, name='search_query'),
+    # ریز متره
+    path('project/<int:pk>/riz-metre/', views.riz_metre_discipline_list, name='riz_metre_discipline_list'),
+    path('project/<int:pk>/riz-metre/<str:discipline>/', views.riz_metre, name='riz_metre'),
+    path('project/<int:pk>/<str:discipline>/summary/', views.measurement_summary, name='price_list_summary'),
+    path('project/<int:pk>/disciplines-summary/', views.discipline_summary, name='discipline_summary'),
+    # ریز مالی
+    path('project/<int:pk>/riz-financial/disciplines/', views.riz_financial_discipline_list, name='riz_financial_discipline_list'),
+    path('project/<int:pk>/riz-financial/<str:discipline_choice>/', views.riz_metre_financial, name='riz_financial'),
 
-    # URL های جدید برای مدیریت پروژه
-    # URL های مدیریت پروژه
+    # صورت جلسات
+    path('project/<int:pk>/sooratjalase/', views.MeasurementSessionView, name='sooratjalase'),
+    path('project/<int:pk>/sessions/', views.session_list, name='session_list'),
 
-    # صورت‌جلسات
     # مدیریت صورت جلسات
     path('projects/<int:project_pk>/sessions/create/', views.session_create, name='session_create'),
     path('projects/<int:project_pk>/sessions/<int:pk>/', views.session_detail, name='session_detail'),
     path('projects/<int:project_pk>/sessions/<int:pk>/edit/', views.session_edit, name='session_edit'),
     path('projects/<int:project_pk>/sessions/<int:pk>/delete/', views.delete_session, name='delete_session'),
-    path('projects/<int:pk>/sessions/', views.session_list, name='session_list'),
+    
     # مدیریت آیتم‌های صورت جلسه
     path('projects/<int:project_pk>/sessions/<int:session_pk>/items/add/', views.add_session_item, name='add_session_item'),
     path('projects/<int:project_pk>/sessions/<int:session_pk>/items/<int:item_pk>/edit/', views.edit_session_item, name='edit_session_item'),
     path('projects/<int:project_pk>/sessions/<int:session_pk>/items/<int:item_pk>/delete/', views.delete_session_item, name='delete_session_item'),
-    # ریز متره
-    path('project/<int:pk>/riz-metre/disciplines/', views.riz_metre_discipline_list, name='riz_metre_discipline_list'),
-    path('project/<int:pk>/riz-metre/<str:discipline_choice>/', views.riz_metre, name='riz_metre'),
-    # پرداخت‌ها
-    # path('projects/<int:project_pk>/payments/', views.payment_list, name='payment_list'),
-    # path('projects/<int:project_pk>/payments/create/', views.payment_create, name='payment_create'),
-    # path('projects/<int:project_pk>/payments/<int:pk>/', views.payment_detail, name='payment_detail'),
-    
+    path('projects/<int:project_pk>/sessions/<int:session_pk>/items/<int:item_pk>/revisions/', views.get_item_revisions, name='get_item_revisions'),
+    path('projects/<int:project_pk>/sessions/<int:session_pk>/groups/<str:pricelist_number>/items/', 
+        views.group_items_detail, 
+        name='group_items_detail'),
+    path('projects/<int:project_pk>/sessions/<int:session_pk>/groups/<str:pricelist_number>/delete/', 
+        views.delete_session_items_by_pricelist, 
+        name='delete_session_items_by_pricelist'),
 
+    # گزارش‌های مالی کلی (لیست پروژه‌ها)
+    path('financial-reports/', views.project_financial_report_list, name='project_financial_report_list'),
+    path('project/<int:pk>/financial-report/', views.project_financial_report, name='project_financial_report'),
+
+    # جستجو
+    path('search/', views.search, name='search'),
+    
+    # AJAX URLs
+    path('get-price-lists/', views.get_price_lists_by_discipline, name='get_price_lists'),
 ]

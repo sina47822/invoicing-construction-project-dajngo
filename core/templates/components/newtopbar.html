@@ -1,0 +1,256 @@
+{% load auth_tags %}
+
+<!-- Sidebar -->
+<aside class="sidebar bg-white d-none d-lg-block" id="sidebar">
+    <div class="position-sticky pt-3" style="padding-bottom: 1rem;">
+        <!-- Sidebar Header -->
+        <div class="px-3 mb-4 d-flex align-items-center justify-content-between">
+            <div class="sidebar-brand d-flex align-items-center text-decoration-none">
+                <i class="bi bi-menu-app me-2 text-primary fs-4"></i>
+                <span class="fw-bold sidebar-title d-none d-lg-inline">منوی اصلی</span>
+                <span class="sidebar-title d-lg-none">منو</span>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary d-lg-none" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#sidebarCollapse"
+                    aria-expanded="false" aria-label="بستن منو">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="nav flex-column px-2" id="sidebarNav">
+            <!-- Dashboard - همه کاربران می‌بینند -->
+            <a href="{% url 'accounts:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-house-door"></i>
+                <span>داشبورد</span>
+            </a>
+            
+            <!-- Projects - فقط کاربران دارای نقش پروژه -->
+            {% if user|has_any_project_role or user.is_superuser %}
+            <div class="nav-item">
+                <a href="#projectsCollapse" class="nav-link collapsed {% if 'project' in request.resolver_match.url_name %}active{% endif %}" 
+                   data-bs-toggle="collapse" data-bs-target="#projectsCollapse">
+                    <i class="bi bi-building"></i>
+                    <span>پروژه‌ها</span>
+                    <i class="bi bi-chevron-left ms-auto"></i>
+                </a>
+                <div class="collapse {% if 'project' in request.resolver_match.url_name %}show{% endif %}" id="projectsCollapse">
+                    <nav class="nav flex-column ms-3 small">
+                        <a href="{% url 'projects:project_list' %}" class="nav-link px-3 py-1 {% if request.resolver_match.url_name == 'project_list' %}active{% endif %}">
+                            <i class="bi bi-list-ul me-1"></i>
+                            <span class="d-none d-lg-inline">لیست پروژه‌ها</span>
+                            <span class="d-lg-none">پروژه‌ها</span>
+                        </a>
+                        
+                        <!-- ایجاد پروژه فقط برای مدیران -->
+                        {% if user|can_access_management %}
+                        <a href="{% url 'projects:project_create' %}" class="nav-link px-3 py-1">
+                            <i class="bi bi-plus-circle me-1 text-success"></i>
+                            <span class="d-none d-lg-inline">ایجاد پروژه</span>
+                            <span class="d-lg-none">جدید</span>
+                        </a>
+                        {% endif %}
+                        
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-calendar3-week me-1 text-info"></i>
+                            <span class="d-none d-lg-inline">تقویم پروژه‌ها</span>
+                            <span class="d-lg-none">تقویم</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Financial Reports - فقط کاربران دارای نقش پروژه -->
+            {% if user|has_any_project_role or user.is_superuser %}
+            <div class="nav-item">
+                <a href="#financialCollapse" class="nav-link collapsed {% if 'financial_report' in request.resolver_match.url_name or 'riz' in request.resolver_match.url_name %}active{% endif %}" 
+                   data-bs-toggle="collapse" data-bs-target="#financialCollapse">
+                    <i class="bi bi-graph-up"></i>
+                    <span>گزارش‌های مالی</span>
+                    <i class="bi bi-chevron-left ms-auto"></i>
+                </a>
+                <div class="collapse {% if 'financial_report' in request.resolver_match.url_name or 'riz' in request.resolver_match.url_name %}show{% endif %}" id="financialCollapse">
+                    <nav class="nav flex-column ms-3 small">
+                        <a href="{% url 'sooratvaziat:project_financial_report_list' %}" class="nav-link px-3 py-1">
+                            <i class="bi bi-file-bar-graph me-1"></i>
+                            <span class="d-none d-lg-inline">همه گزارش‌ها</span>
+                            <span class="d-lg-none">گزارش‌ها</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-pie-chart me-1 text-primary"></i>
+                            <span class="d-none d-lg-inline">خلاصه مالی</span>
+                            <span class="d-lg-none">خلاصه</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-bar-chart me-1 text-warning"></i>
+                            <span class="d-none d-lg-inline">مقایسه پروژه‌ها</span>
+                            <span class="d-lg-none">مقایسه</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-rulers me-1 text-success"></i>
+                            <span class="d-none d-lg-inline">ریز متره</span>
+                            <span class="d-lg-none">متره</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Sessions - فقط کاربران دارای نقش پروژه -->
+            {% if user|has_any_project_role or user.is_superuser %}
+            <div class="nav-item">
+                <a href="#sessionsCollapse" class="nav-link collapsed {% if 'session' in request.resolver_match.url_name %}active{% endif %}" 
+                   data-bs-toggle="collapse" data-bs-target="#sessionsCollapse">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>صورت جلسات</span>
+                    <i class="bi bi-chevron-left ms-auto"></i>
+                </a>
+                <div class="collapse {% if 'session' in request.resolver_match.url_name %}show{% endif %}" id="sessionsCollapse">
+                    <nav class="nav flex-column ms-3 small">
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-list-nested me-1"></i>
+                            <span class="d-none d-lg-inline">لیست جلسات</span>
+                            <span class="d-lg-none">جلسات</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-calendar-plus me-1 text-success"></i>
+                            <span class="d-none d-lg-inline">جلسه جدید</span>
+                            <span class="d-lg-none">جدید</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-calendar4-week me-1 text-info"></i>
+                            <span class="d-none d-lg-inline">تقویم جلسات</span>
+                            <span class="d-lg-none">تقویم</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Reports - فقط کاربران دارای نقش پروژه -->
+            {% if user|has_any_project_role or user.is_superuser %}
+            <div class="nav-item">
+                <a href="#reportsCollapse" class="nav-link collapsed" 
+                   data-bs-toggle="collapse" data-bs-target="#reportsCollapse">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>گزارش‌ها</span>
+                    <i class="bi bi-chevron-left ms-auto"></i>
+                </a>
+                <div class="collapse" id="reportsCollapse">
+                    <nav class="nav flex-column ms-3 small">
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-calendar-month me-1 text-primary"></i>
+                            <span class="d-none d-lg-inline">گزارش ماهانه</span>
+                            <span class="d-lg-none">ماهانه</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-graph-up-arrow me-1 text-success"></i>
+                            <span class="d-none d-lg-inline">پیشرفت پروژه</span>
+                            <span class="d-lg-none">پیشرفت</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-currency-dollar me-1 text-warning"></i>
+                            <span class="d-none d-lg-inline">بودجه و هزینه</span>
+                            <span class="d-lg-none">بودجه</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-download me-1 text-info"></i>
+                            <span class="d-none d-lg-inline">صدور گزارش</span>
+                            <span class="d-lg-none">صدور</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Settings - همه کاربران می‌بینند اما محتوا متفاوت -->
+            <div class="nav-item mt-auto">
+                <a href="#settingsCollapse" class="nav-link collapsed" 
+                data-bs-toggle="collapse" data-bs-target="#settingsCollapse">
+                    <i class="bi bi-gear"></i>
+                    <span>تنظیمات</span>
+                    <i class="bi bi-chevron-left ms-auto"></i>
+                </a>
+                <div class="collapse" id="settingsCollapse">
+                    <nav class="nav flex-column ms-3 small">
+                        <!-- مدیریت کاربران فقط برای مدیران -->
+                        {% if user|can_access_management %}
+                        <a href="{% url 'accounts:user_list' %}" class="nav-link px-3 py-1">
+                            <i class="bi bi-people me-1 text-primary"></i>
+                            <span>مدیریت کاربران</span>
+                        </a>
+                        {% endif %}
+                        
+                        <!-- تنظیمات کاربری - همه کاربران -->
+                        <a href="{% url 'accounts:settings' %}" class="nav-link px-3 py-1">
+                            <i class="bi bi-person-gear me-1"></i>
+                            <span>تنظیمات کاربری</span>
+                        </a>
+                        
+                        <!-- تنظیمات سیستم فقط برای مدیران -->
+                        {% if user|can_access_management %}
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-sliders me-1"></i>
+                            <span>تنظیمات سیستم</span>
+                        </a>
+                        {% endif %}
+                        
+                        <!-- بقیه تنظیمات برای همه -->
+                        <a href="#}" class="nav-link px-3 py-1">
+                            <i class="bi bi-cloud-arrow-down me-1 text-info"></i>
+                            <span>پشتیبان‌گیری</span>
+                        </a>
+                        <a href="#" class="nav-link px-3 py-1">
+                            <i class="bi bi-question-circle me-1 text-primary"></i>
+                            <span>راهنما</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Divider -->
+            <hr class="my-3 opacity-25">
+            
+            <!-- Quick Actions - فقط کاربران دارای نقش پروژه -->
+            {% if user|has_any_project_role or user.is_superuser %}
+            <div class="nav-item">
+                <h6 class="sidebar-section-title px-2 mb-2 text-muted small text-uppercase">
+                    <i class="bi bi-lightning-charge me-1"></i>
+                    دسترسی سریع
+                </h6>
+                <a href="{% url 'accounts:dashboard' %}" class="nav-link nav-link-quick px-3 py-1">
+                    <i class="bi bi-speedometer2 me-1 text-primary"></i>
+                    <span>داشبورد سریع</span>
+                </a>
+                <a href="#" class="nav-link nav-link-quick px-3 py-1">
+                    <i class="bi bi-clock-history me-1 text-warning"></i>
+                    <span>پروژه‌های اخیر</span>
+                </a>
+                <a href="#" class="nav-link nav-link-quick px-3 py-1">
+                    <i class="bi bi-check2-square me-1 text-success"></i>
+                    <span>وظایف امروز</span>
+                </a>
+            </div>
+            {% endif %}
+        </nav>
+        
+        <!-- Sidebar Footer -->
+        <div class="mt-4 pt-3 border-top px-2">
+            <div class="d-flex align-items-center justify-content-between small text-muted">
+                <span>
+                    v{{ version|default:"1.0.0" }}
+                </span>
+                <a href="#" class="text-decoration-none" data-bs-toggle="tooltip" title="وضعیت سیستم">
+                    <i class="bi bi-circle-fill text-success"></i>
+                </a>
+            </div>
+            <div class="mt-2 small text-center">
+                <a href="#" class="text-muted text-decoration-none">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <span class="d-none d-lg-inline">درباره سیستم</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</aside>

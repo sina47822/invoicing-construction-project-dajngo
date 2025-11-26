@@ -3,7 +3,37 @@
 {% block title %}داشبورد{% endblock %}
 
 {% block content %}
-    <h1>خوش آمدید به داشبورد!</h1>
-    <p>از navbar برای دسترسی به صفحات استفاده کنید.</p>
-    <!-- محتوای داشبورد رو اینجا اضافه کن -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">داشبورد کاربری</h1>
+            
+            <!-- اطلاعات کاربر -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">اطلاعات کاربر</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>نام کاربری:</strong> {{ user.username }}</p>
+                            <p><strong>نام کامل:</strong> {{ user.get_full_name|default:"ثبت نشده" }}</p>
+                            <p><strong>ایمیل:</strong> {{ user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>نقش‌ها:</strong></p>
+                            <ul>
+                                {% for role in user.roles.all %}
+                                    <li>{{ role.get_role_display }}</li>
+                                {% empty %}
+                                    <li>بدون نقش</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

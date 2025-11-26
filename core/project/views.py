@@ -39,12 +39,24 @@ from sooratvaziat.utils import (
     get_chart_data,
     calculate_project_duration,
     get_last_activity,
-    
+    get_project_with_access,
+    get_user_project_role,
+    can_edit_directly,
+    can_view_revisions
 )
 
+from django.contrib.auth.decorators import user_passes_test
+
 logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
 
+def is_project_user(user):
+    """Check if user has project roles or is superuser"""
+    if user.is_superuser:
+        return True
+    
+    project_roles = ['مدیر طرح', 'ناظر', 'پیمانکار']
+    return user.roles.filter(role__in=project_roles).exists()
 
 @login_required
 @project_access_required(['admin' , 'contractor'])
@@ -290,7 +302,8 @@ def project_create(request):
         'current_user': request.user,
     }
     return render(request, 'project/project_create.html', context)
-    
+
+@user_passes_test(is_project_user)    
 @login_required
 def project_list(request):
     """
@@ -375,8 +388,9 @@ def project_list(request):
     total_projects = page_obj.paginator.count
     
     try:
+        # استفاده از contract_amount به جای total_contract_amount
         total_contract_amount = projects.aggregate(
-            total=models.Sum('contract_amount')  # Fixed: use contract_amount, not total_contract_amount
+            total=models.Sum('contract_amount')
         )['total'] or Decimal('0.00')
     except Exception as e:
         print(f"Error calculating total contract amount: {e}")
@@ -410,6 +424,13 @@ def project_list(request):
     if total_contract_amount > 0:
         overall_progress_percentage = (total_measured_amount / total_contract_amount) * 100
     
+    # محاسبه مبلغ کل با مالیات
+    total_contract_with_vat = Decimal('0.00')
+    for project in page_obj.object_list:
+        if project.contract_amount:
+            vat_amount = (project.contract_amount * project.vat_percentage) / 100
+            total_contract_with_vat += project.contract_amount + vat_amount
+    
     # ========== آمادگی داده‌ها برای Template ==========
     # اضافه کردن اطلاعات مالی به هر پروژه
     for project in page_obj.object_list:
@@ -442,7 +463,9 @@ def project_list(request):
         # آمار کلی
         'total_projects': total_projects,
         'total_contract_amount': total_contract_amount,
+        'total_contract_with_vat': total_contract_with_vat,
         'formatted_total_contract': format_number_int(total_contract_amount),
+        'formatted_total_contract_vat': format_number_int(total_contract_with_vat),
         
         # آمار متره (از خلاصه‌های مالی)
         'total_measured_amount': total_measured_amount,
@@ -478,6 +501,7 @@ def project_list(request):
     
     return render(request, 'project/project_list.html', context)
 
+@user_passes_test(is_project_user)
 @login_required
 def project_detail(request, pk):
     """

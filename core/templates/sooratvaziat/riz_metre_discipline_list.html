@@ -58,6 +58,25 @@
         border-radius: 15px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 15px;
+    }
+    
+    .btn-summary {
+        background: linear-gradient(135deg, #20c997, #198754);
+        color: white;
+        border: none;
+    }
+    
+    .btn-details {
+        background: linear-gradient(135deg, #6f42c1, #e83e8c);
+        color: white;
+        border: none;
+    }
 </style>
 {% endblock %}
 
@@ -83,7 +102,7 @@
                 </a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
-                <i class="bi bi-ruler me-1"></i> انتخاب رشته برای ریز متره
+                <i class="bi bi-ruler me-1"></i> انتخاب رشته برای متره
             </li>
         </ol>
     </nav>
@@ -124,17 +143,36 @@
         <div class="col-lg-6 col-xl-4 mb-4">
             <div class="discipline-card text-center">
                 <div class="discipline-icon">
-                    <i class="bi bi-gear-fill"></i>
+                    {% if discipline.value == 'AB' %}
+                        <i class="bi bi-building"></i>
+                    {% elif discipline.value == 'ME' %}
+                        <i class="bi bi-gear"></i>
+                    {% elif discipline.value == 'EL' %}
+                        <i class="bi bi-lightning-charge"></i>
+                    {% else %}
+                        <i class="bi bi-puzzle"></i>
+                    {% endif %}
                 </div>
                 <h4 class="text-primary mb-3">{{ discipline.label }}</h4>
                 <p class="text-muted mb-3">
                     <i class="bi bi-cube me-1"></i>
                     تعداد آیتم‌ها: <span class="item-count">{{ discipline.count }}</span>
                 </p>
-                <a href="{% url 'sooratvaziat:riz_metre' project.pk discipline.value %}" 
-                   class="btn btn-primary btn-action w-100">
-                    <i class="bi bi-eye me-2"></i>مشاهده ریز متره
-                </a>
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    {{ discipline.description }}
+                </p>
+                
+                <div class="action-buttons">
+                    <a href="{% url 'sooratvaziat:price_list_summary' project.pk discipline.value %}" 
+                       class="btn btn-summary btn-action">
+                        <i class="bi bi-calculator me-2"></i>خلاصه متره
+                    </a>
+                    <a href="{% url 'sooratvaziat:riz_metre' project.pk discipline.value %}" 
+                       class="btn btn-details btn-action">
+                        <i class="bi bi-list-ul me-2"></i>ریز متره
+                    </a>
+                </div>
             </div>
         </div>
         {% endfor %}

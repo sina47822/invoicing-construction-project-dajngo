@@ -290,7 +290,6 @@ class DetailedMeasurementAdmin(admin.ModelAdmin):
         'price_list_item_display',
         'total_quantity_display',
         'sessions_count',
-        'projects_count',
         'last_updated_jalali'
     )
     

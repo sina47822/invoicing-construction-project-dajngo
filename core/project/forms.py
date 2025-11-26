@@ -124,7 +124,17 @@ class ProjectCreateForm(forms.ModelForm):
         required=True,
         label='شهر'
     )
-
+    # مالیات بر ارزش افزوده
+    vat_percentage = forms.CharField(
+        widget=TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '10%',
+            'type': 'text',
+            'data-inputmask': "'alias': 'numeric', 'groupSeparator': ',', 'radixPoint': '.', 'digits': 0"
+        }),
+        required=True,
+        label='درصد مالیات بر ارزش افزوده:'
+    )
     # توضیحات
     description = forms.CharField(
         widget=Textarea(attrs={
@@ -198,7 +208,8 @@ class ProjectCreateForm(forms.ModelForm):
             'description',
             'country',
             'province',
-            'city',    
+            'city',
+            'vat_percentage',    
         ]
         widgets = {
             'project_name': TextInput(attrs={
@@ -271,36 +282,48 @@ class ProjectCreateForm(forms.ModelForm):
         # تنظیم گزینه‌های استان و شهر
         self.set_location_choices()
         
-        # اگر در حالت ویرایش هستیم و شهر داریم، آن را تنظیم کن
-        if self.instance and self.instance.pk and self.instance.city:
-            self.set_city_choices_based_on_province()
-            # تنظیم مقدار اولیه برای شهر
-            self.fields['city'].initial = self.instance.city
+        # **اصلاح اصلی: تنظیم شهرها بر اساس استان در حالت POST**
+        if self.data and 'province' in self.data and self.data['province']:
+            province = self.data['province']
+            self.set_city_choices_based_on_province(province)
+        
+        # **اضافه کردن: تنظیم استان و شهر پیش‌فرض در حالت GET**
+        elif not self.data:
+            # تنظیم استان پیش‌فرض
+            default_province = 'تهران'
+            self.initial['province'] = default_province
+            self.set_city_choices_based_on_province(default_province)
+            
+            # تنظیم شهر پیش‌فرض
+            default_city = 'تهران'
+            self.initial['city'] = default_city
         
         # تنظیم queryset برای فیلدهای کاربر
         active_users = User.objects.filter(is_active=True)
-        self.fields['employer_user'].queryset = active_users
-        self.fields['project_manager_user'].queryset = active_users
-        self.fields['consultant_user'].queryset = active_users
-        self.fields['supervising_engineer_user'].queryset = active_users
-        
-        if self.instance and self.instance.pk:
-            self.set_initial_users()
+        self.fields['employer_user'].queryset = User.objects.filter(
+            roles__role='employer', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
 
-    def set_initial_users(self):
-        """تنظیم کاربران فعلی برای حالت ویرایش"""
-        project_users = ProjectUser.objects.filter(project=self.instance)
-        
-        for project_user in project_users:
-            if project_user.role == 'employer':
-                self.fields['employer_user'].initial = project_user.user
-            elif project_user.role == 'project_manager':
-                self.fields['project_manager_user'].initial = project_user.user
-            elif project_user.role == 'consultant':
-                self.fields['consultant_user'].initial = project_user.user
-            elif project_user.role == 'supervisor':
-                self.fields['supervising_engineer_user'].initial = project_user.user            
-    
+        self.fields['project_manager_user'].queryset = User.objects.filter(
+            roles__role='project_manager', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
+
+        self.fields['consultant_user'].queryset = User.objects.filter(
+            roles__role='consultant', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
+
+        self.fields['supervising_engineer_user'].queryset = User.objects.filter(
+            roles__role='supervisor', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
+
     def set_location_choices(self):
         """تنظیم گزینه‌های استان و شهر"""
         
@@ -671,16 +694,17 @@ class ProjectCreateForm(forms.ModelForm):
         # ذخیره برای استفاده در جاوااسکریپت
         self.province_cities_data = cities_by_province
 
-    def set_city_choices_based_on_province(self):
+    def set_city_choices_based_on_province(self, province_name):
         """تنظیم گزینه‌های شهر بر اساس استان انتخاب شده"""
-        if self.instance and self.instance.province:
-            province = self.instance.province
-            if province in self.province_cities_data:
-                cities = self.province_cities_data[province]
-                # تنظیم choices برای ویجت Select
-                self.fields['city'].widget.choices = [('', 'انتخاب شهر')] + cities
-                self.fields['city'].widget.attrs.pop('disabled', None)
-                print(f"🏙️ City choices set for {province}: {[city[0] for city in cities]}")
+        if province_name in self.province_cities_data:
+            cities = self.province_cities_data[province_name]
+            
+            # **اصلاح: تنظیم choices برای فیلد city**
+            self.fields['city'].choices = [('', 'انتخاب شهر')] + cities
+            self.fields['city'].widget.choices = [('', 'انتخاب شهر')] + cities
+            self.fields['city'].widget.attrs.pop('disabled', None)
+            
+            print(f"🏙️ City choices set for {province_name}: {[city[0] for city in cities]}")
 
     def get_province_cities_json(self):
         """دریافت داده‌های JSON برای جاوااسکریپت"""
@@ -1059,7 +1083,17 @@ class ProjectEditForm(forms.ModelForm):
         }),
         label='کاربر ناظر'
     )
-     
+    
+    vat_percentage = forms.CharField(
+        widget=TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '10%',
+            'type': 'text',
+            'data-inputmask': "'alias': 'numeric', 'groupSeparator': ',', 'radixPoint': '.', 'digits': 0"
+        }),
+        required=True,
+        label='درصد مالیات بر ارزش افزوده:'
+    )
     class Meta:
         model = Project
         fields = [
@@ -1075,7 +1109,8 @@ class ProjectEditForm(forms.ModelForm):
             'description',
             'country',
             'province',
-            'city',    
+            'city',  
+            'vat_percentage',
         ]
         widgets = {
             'project_name': TextInput(attrs={
@@ -1145,9 +1180,31 @@ class ProjectEditForm(forms.ModelForm):
         self.fields['consultant_user'].queryset = active_users
         self.fields['supervising_engineer_user'].queryset = active_users
         
-        # تنظیم کاربران فعلی
-        if self.instance and self.instance.pk:
-            self.set_initial_users()
+        # تنظیم queryset برای فیلدهای کاربر
+        active_users = User.objects.filter(is_active=True)
+        self.fields['employer_user'].queryset = User.objects.filter(
+            roles__role='employer', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
+
+        self.fields['project_manager_user'].queryset = User.objects.filter(
+            roles__role='project_manager', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
+
+        self.fields['consultant_user'].queryset = User.objects.filter(
+            roles__role='consultant', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
+
+        self.fields['supervising_engineer_user'].queryset = User.objects.filter(
+            roles__role='supervisor', 
+            roles__is_active=True,
+            is_active=True
+        ).distinct()
         
         # **اصلاح اصلی: تنظیم مقدار اولیه شهر**
         if self.instance and self.instance.pk and self.instance.city:
@@ -1158,7 +1215,7 @@ class ProjectEditForm(forms.ModelForm):
     def set_initial_users(self):
         """تنظیم کاربران فعلی برای حالت ویرایش"""
         project_users = ProjectUser.objects.filter(project=self.instance)
-        
+                
         for project_user in project_users:
             if project_user.role == 'employer':
                 self.fields['employer_user'].initial = project_user.user

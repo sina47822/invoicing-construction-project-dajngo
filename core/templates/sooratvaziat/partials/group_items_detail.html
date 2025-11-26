@@ -1,0 +1,93 @@
+<!-- templates/sooratvaziat/partials/group_items_detail.html -->
+
+{% if error %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i>
+    {{ error }}
+</div>
+{% else %}
+<div class="table-responsive">
+    <table class="table table-sm table-hover custom-table">
+        <thead class="table-light">
+            <tr>
+                <th width="25%">شرح ردیف</th>
+                <th width="10%">طول</th>
+                <th width="10%">عرض</th>
+                <th width="10%">ارتفاع</th>
+                <th width="10%">تعداد</th>
+                <th width="15%">مقدار</th>
+                <th width="10%">یادداشت</th>
+                <th width="10%">عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in group_items %}
+            <tr>
+                <td class="align-middle">
+                    {{ item.row_description|default:"-" }}
+                </td>
+                <td class="align-middle text-center">
+                    {% if item.length %}{{ item.length|floatformat:2 }}{% else %}-{% endif %}
+                </td>
+                <td class="align-middle text-center">
+                    {% if item.width %}{{ item.width|floatformat:2 }}{% else %}-{% endif %}
+                </td>
+                <td class="align-middle text-center">
+                    {% if item.height %}{{ item.height|floatformat:2 }}{% else %}-{% endif %}
+                </td>
+                <td class="align-middle text-center">
+                    {{ item.count|floatformat:2 }}
+                </td>
+                <td class="align-middle text-center fw-bold">
+                    {{ item.get_total_item_amount|floatformat:2 }}
+                </td>
+                <td class="align-middle">
+                    <small class="text-muted">{{ item.notes|default:"-"|truncatechars:30 }}</small>
+                </td>
+                <td class="align-middle">
+                    <div class="btn-group btn-group-sm">
+                        <!-- دکمه ویرایش آیتم -->
+                        <button type="button" class="btn btn-outline-warning edit-item-btn"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editItemModal"
+                                data-item-id="{{ item.pk }}"
+                                data-item-length="{{ item.length|default:0 }}"
+                                data-item-width="{{ item.width|default:0 }}"
+                                data-item-height="{{ item.height|default:0 }}"
+                                data-item-count="{{ item.count }}"
+                                data-item-notes="{{ item.notes|default:'' }}"
+                                title="ویرایش آیتم">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        
+                        <!-- دکمه حذف آیتم -->
+                        <button type="button" class="btn btn-outline-danger delete-single-item-btn"
+                                data-item-id="{{ item.pk }}"
+                                data-item-description="{{ item.row_description|default:item.pricelist_item.description }}"
+                                title="حذف آیتم">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center text-muted py-3">
+                    <i class="bi bi-inbox"></i>
+                    هیچ آیتمی در این گروه یافت نشد.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        {% if group_items %}
+        <tfoot class="table-success">
+            <tr>
+                <td colspan="5" class="text-end fw-bold">جمع کل گروه:</td>
+                <td class="text-center fw-bold">{{ total_quantity|floatformat:2 }}</td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+</div>
+{% endif %}

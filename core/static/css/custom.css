@@ -80,7 +80,7 @@
 .topbar {
     background-color: #fff;
     border-bottom: 1px solid #dee2e6;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 3rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -324,4 +324,47 @@ main {
     .no-print {
         display: none !important;
     }
+}
+
+.custom-table {
+    --bs-table-bg: #f8f9fa;
+    --bs-table-color: #212529;
+    --bs-table-border-color: #dee2e6;
+}
+
+.custom-table thead {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.custom-table .table-group-header {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.custom-table .table-subgroup-header {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+.custom-table .table-total-row {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.custom-table-row {
+    background-color: white !important;
+    border-bottom: 1px solid #dee2e6;
+}
+.custom-table-row:hover {
+    background-color: #f8f9fa !important;
+}
+
+.sidebar .nav-link[aria-expanded="true"] .bi-chevron-left {
+    transform: rotate(-90deg);
+    transition: transform 0.2s ease-in-out;
+}
+
+.sidebar .nav-link .bi-chevron-left {
+    transition: transform 0.2s ease-in-out;
 }
